@@ -997,12 +997,37 @@ function buildAltaUnificadaForm(d={}) {
 }
 
 window.switchAltaTab = function(panel, el) {
+  // Guardar datos del panel actual antes de cambiar
+  _guardarDatosPanelActual();
   document.querySelectorAll('.alta-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.alta-panel').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
   const panelEl = document.getElementById('panel-'+panel);
   if(panelEl) panelEl.classList.add('active');
+  // Restaurar datos guardados en el nuevo panel
+  _restaurarDatosPanel();
 };
+
+// Almacén temporal de datos mientras se navega entre tabs
+window._formCache = {};
+
+function _guardarDatosPanelActual() {
+  const panelActivo = document.querySelector('.alta-panel.active');
+  if (!panelActivo) return;
+  panelActivo.querySelectorAll('[name]').forEach(el => {
+    window._formCache[el.name] = el.value;
+  });
+}
+
+function _restaurarDatosPanel() {
+  const panelActivo = document.querySelector('.alta-panel.active');
+  if (!panelActivo) return;
+  panelActivo.querySelectorAll('[name]').forEach(el => {
+    if (window._formCache[el.name] !== undefined && window._formCache[el.name] !== '') {
+      el.value = window._formCache[el.name];
+    }
+  });
+}
 
 window.toggleClienteMode = function(modo) {
   const esNuevo = modo==='nuevo';
@@ -1076,6 +1101,7 @@ const MODAL_TITLES = {
 window.openModal = function(prefill={}) {
   const sec = window._state.section;
   window._state.clienteSeleccionado = null;
+  window._formCache = {}; // Limpiar caché al abrir nuevo formulario
   // Secciones que usan el formulario unificado
   if (sec === 'dashboard' || sec === 'vencimientos' || sec === 'polizas' || sec === 'bienes') {
     document.getElementById('modal-title').textContent = window._state.editingId ? 'Editar póliza' : 'Nueva póliza';
@@ -1103,7 +1129,9 @@ function fillForm(d) {
 }
 
 window.closeModal = function(e) {
-  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  // Solo cerrar si se llama sin evento (botón Cancelar/X) o si es el botón explícito
+  // NO cerrar al hacer clic fuera del modal
+  if (e && e.type === 'click' && e.target === document.getElementById('modal-overlay')) return;
   document.getElementById('modal-overlay').style.display = 'none';
   window._state.editingId = null;
   window._state.clienteSeleccionado = null;
@@ -1133,10 +1161,14 @@ window.saveRecord = async function() {
 
   if (!isUnified) { return _origSaveRecord(); }
 
+  // Guardar panel actual antes de recolectar
+  _guardarDatosPanelActual();
   const body = document.getElementById('modal-body');
-  const inputs = body.querySelectorAll('[name]');
-  const raw = {};
-  inputs.forEach(el => { if(el.value.trim()) raw[el.name] = el.value.trim(); });
+  // Recolectar datos de TODOS los panels (visibles o no) + caché
+  const raw = { ...window._formCache };
+  body.querySelectorAll('[name]').forEach(el => {
+    if(el.value.trim()) raw[el.name] = el.value.trim();
+  });
 
   // Determinar nombre del cliente
   let nombreCliente = '';
