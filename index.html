@@ -370,7 +370,7 @@ tbody tr:hover td { background: var(--bg); }
   </div>
 
   <!-- MODAL -->
-  <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
+  <div id="modal-overlay" class="modal-overlay" >
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-header">
         <h3 id="modal-title">Nuevo registro</h3>
@@ -561,17 +561,61 @@ window.renderSection = function(sec) {
 // ── BÚSQUEDA ───────────────────────────────────────
 window.handleSearch = function(q) {
   const D = window._state.data;
-  const content = document.getElementById('content');
-  q = q.toLowerCase().trim();
-  if (!q) { renderSection(window._state.section); return; }
+  const contentEl = document.getElementById('content');
+  q = (q||'').toLowerCase().trim();
   const sec = window._state.section;
+
+  // En dashboard y vencimientos, buscar en pólizas y clientes globalmente
+  if (sec === 'dashboard' || sec === 'vencimientos') {
+    if (!q) { renderSection(sec); return; }
+    const filt = (arr, fields) => arr.filter(r => fields.some(f => (r[f]||'').toLowerCase().includes(q)));
+    const polizasFilt = filt(D.polizas, ['nro','cliente','ramo','compania','productor']);
+    const clientesFilt = filt(D.clientes, ['nombre','dni','email','tel_cel','domicilio']);
+    contentEl.innerHTML = `
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header"><span class="card-title">Resultados en Pólizas</span><span class="badge badge-blue">${polizasFilt.length}</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nro. póliza</th><th>Cliente</th><th>Ramo</th><th>Compañía</th><th>Vencimiento</th><th>Estado</th></tr></thead>
+          <tbody>${polizasFilt.length
+            ? polizasFilt.map(p=>`<tr>
+                <td style="font-size:12px;color:var(--text2)">${p.nro||'—'}</td>
+                <td>${avatarCell(p.cliente)}</td>
+                <td>${p.ramo||'—'}</td>
+                <td>${p.compania||'—'}</td>
+                <td>${p.venc_hasta||'—'}</td>
+                <td>${statusBadge(p.estado)}</td>
+              </tr>`).join('')
+            : `<tr><td colspan="6">${emptyState('Sin resultados en pólizas')}</td></tr>`
+          }</tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Resultados en Clientes</span><span class="badge badge-blue">${clientesFilt.length}</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nombre</th><th>DNI / CUIT</th><th>Celular</th><th>Email</th></tr></thead>
+          <tbody>${clientesFilt.length
+            ? clientesFilt.map(c=>`<tr>
+                <td>${avatarCell(c.nombre)}</td>
+                <td style="color:var(--text2)">${c.dni||'—'}</td>
+                <td>${c.tel_cel||'—'}</td>
+                <td style="color:var(--blue)">${c.email||'—'}</td>
+              </tr>`).join('')
+            : `<tr><td colspan="4">${emptyState('Sin resultados en clientes')}</td></tr>`
+          }</tbody>
+        </table></div>
+      </div>`;
+    return;
+  }
+
+  if (!q) { renderSection(sec); return; }
   const filt = (arr, fields) => arr.filter(r => fields.some(f => (r[f]||'').toLowerCase().includes(q)));
-  if (sec==='clientes')    content.innerHTML = renderClientes(filt(D.clientes, ['nombre','dni','email','tel_cel','tel_fijo','domicilio']));
-  else if (sec==='polizas')     content.innerHTML = renderPolizas(filt(D.polizas, ['nro','cliente','ramo','compania']), D);
-  else if (sec==='bienes')      content.innerHTML = renderBienes(filt(D.bienes, ['patente','marca','modelo','cliente']), D);
-  else if (sec==='siniestros')  content.innerHTML = renderSiniestros(filt(D.siniestros, ['nro','cliente','descripcion']), D);
-  else if (sec==='productores') content.innerHTML = renderProductores(filt(D.productores, ['nombre','matricula','email']), D);
-  else if (sec==='companias')   content.innerHTML = renderCompanias(filt(D.companias, ['nombre','cuit','contacto']), D);
+  if (sec==='clientes')    contentEl.innerHTML = renderClientes(filt(D.clientes, ['nombre','dni','email','tel_cel','tel_fijo','domicilio']));
+  else if (sec==='polizas')     contentEl.innerHTML = renderPolizas(filt(D.polizas, ['nro','cliente','ramo','compania','productor']), D);
+  else if (sec==='bienes')      contentEl.innerHTML = renderBienes(filt(D.bienes, ['patente','marca','modelo','cliente','chasis','motor']), D);
+  else if (sec==='siniestros')  contentEl.innerHTML = renderSiniestros(filt(D.siniestros, ['nro','cliente','descripcion','compania']), D);
+  else if (sec==='productores') contentEl.innerHTML = renderProductores(filt(D.productores, ['nombre','matricula','email']), D);
+  else if (sec==='companias')   contentEl.innerHTML = renderCompanias(filt(D.companias, ['nombre','cuit','contacto']), D);
+  else if (sec==='vencimientos') contentEl.innerHTML = renderVencimientos(filt(D.polizas, ['nro','cliente','ramo','compania']), D);
 };
 
 // ── HELPERS ────────────────────────────────────────
