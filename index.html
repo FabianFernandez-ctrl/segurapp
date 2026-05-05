@@ -244,6 +244,20 @@ tbody tr:hover td { background: var(--bg); }
 .alta-panel { display:none; }
 .alta-panel.active { display:block; }
 
+/* ── NAVEGACIÓN ENTRE PASOS ───────────────────── */
+.alta-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  position: sticky;
+  bottom: 0;
+  background: var(--white);
+  z-index: 10;
+}
+
   </style>
 </head>
 <body>
@@ -967,6 +981,8 @@ function buildAltaUnificadaForm(d={}) {
     <div class="alta-tab" onclick="switchAltaTab('bien',this)"><span class="tab-num">3</span> Bien asegurado</div>
   </div>
   <div class="alta-panels">
+
+    <!-- PANEL 1: CLIENTE -->
     <div class="alta-panel active" id="panel-cliente">
       <div style="margin-bottom:12px">
         <label style="font-size:12px;font-weight:500;color:var(--text2)">¿Es un cliente existente o nuevo?</label>
@@ -993,34 +1009,37 @@ function buildAltaUnificadaForm(d={}) {
           <div class="form-group form-col-full"><label>Domicilio</label><input type="text" name="domicilio" value="${d.domicilio||''}" placeholder="Av. San Martín 123, Cipolletti"></div>
         </div>
       </div>
-      <div style="display:flex;justify-content:flex-end;margin-top:12px">
-        <button type="button" class="btn btn-primary" onclick="switchAltaTab('poliza',document.querySelectorAll('.alta-tab')[1])">Siguiente →</button>
+      <div class="alta-nav">
+        <span></span>
+        <button type="button" class="btn btn-primary" onclick="avanzarPaso('poliza',1)">Siguiente →</button>
       </div>
     </div>
 
+    <!-- PANEL 2: PÓLIZA -->
     <div class="alta-panel" id="panel-poliza">
       <div class="form-grid">
-        <div class="form-group"><label>Nro. de póliza *</label><input type="text" name="nro" value="${d.nro||''}" placeholder="AUT-2025-00100" required></div>
-        <div class="form-group"><label>Ramo *</label><select name="ramo" required>
+        <div class="form-group"><label>Nro. de póliza *</label><input type="text" name="nro" value="${d.nro||''}" placeholder="AUT-2025-00100"></div>
+        <div class="form-group"><label>Ramo *</label><select name="ramo">
           ${['Automotor','Hogar','Comercio','Vida','Accidentes Personales','ART','Salud','Responsabilidad Civil','Transporte','Agrícola','Otro'].map(r=>`<option value="${r}" ${d.ramo===r?'selected':''}>${r}</option>`).join('')}
         </select></div>
-        <div class="form-group"><label>Compañía *</label><select name="compania" required><option value="">— Seleccionar —</option>${optComp}</select></div>
+        <div class="form-group"><label>Compañía *</label><select name="compania"><option value="">— Seleccionar —</option>${optComp}</select></div>
         <div class="form-group"><label>Productor</label><select name="productor"><option value="">— Sin asignar —</option>${optProd}</select></div>
         <div class="form-group"><label>Estado</label><select name="estado">
           <option value="vigente">Vigente</option><option value="suspendida">Suspendida</option><option value="vencida">Vencida</option>
         </select></div>
         <div class="form-group"><label>Prima anual ($)</label><input type="number" name="prima" value="${d.prima||''}" placeholder="0"></div>
         <div class="form-group"><label>Vigencia desde</label><input type="date" name="venc_desde" value="${d.venc_desde||''}"></div>
-        <div class="form-group"><label>Vigencia hasta *</label><input type="date" name="venc_hasta" value="${d.venc_hasta||''}"></div>
+        <div class="form-group"><label>Vigencia hasta</label><input type="date" name="venc_hasta" value="${d.venc_hasta||''}"></div>
         <div class="form-group"><label>Suma asegurada ($)</label><input type="number" name="suma" value="${d.suma||''}" placeholder="0"></div>
         <div class="form-group form-col-full"><label>Observaciones</label><textarea name="obs_poliza">${d.obs_poliza||''}</textarea></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:12px">
-        <button type="button" class="btn" onclick="switchAltaTab('cliente',document.querySelectorAll('.alta-tab')[0])">← Anterior</button>
-        <button type="button" class="btn btn-primary" onclick="switchAltaTab('bien',document.querySelectorAll('.alta-tab')[2])">Siguiente →</button>
+      <div class="alta-nav">
+        <button type="button" class="btn" onclick="avanzarPaso('cliente',0)">← Anterior</button>
+        <button type="button" class="btn btn-primary" onclick="avanzarPaso('bien',2)">Siguiente →</button>
       </div>
     </div>
 
+    <!-- PANEL 3: BIEN ASEGURADO -->
     <div class="alta-panel" id="panel-bien">
       <div class="form-grid">
         <div class="form-group form-col-full"><label>Tipo de bien asegurado</label>
@@ -1033,23 +1052,47 @@ function buildAltaUnificadaForm(d={}) {
         </div>
       </div>
       <div id="alta-bien-campos" class="form-grid">${buildBienCampos(tipoBien, d)}</div>
-      <div style="display:flex;justify-content:flex-start;margin-top:12px">
-        <button type="button" class="btn" onclick="switchAltaTab('poliza',document.querySelectorAll('.alta-tab')[1])">← Anterior</button>
+      <div class="alta-nav">
+        <button type="button" class="btn" onclick="avanzarPaso('poliza',1)">← Anterior</button>
+        <button type="button" class="btn btn-primary" onclick="saveRecord()">💾 Guardar todo</button>
       </div>
     </div>
+
   </div>`;
 }
 
 window.switchAltaTab = function(panel, el) {
-  // Guardar datos del panel actual antes de cambiar
   _guardarDatosPanelActual();
   document.querySelectorAll('.alta-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.alta-panel').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
   const panelEl = document.getElementById('panel-'+panel);
   if(panelEl) panelEl.classList.add('active');
-  // Restaurar datos guardados en el nuevo panel
   _restaurarDatosPanel();
+};
+
+// avanzarPaso: valida el paso actual, guarda datos y avanza
+window.avanzarPaso = function(panel, tabIndex) {
+  // Validar paso 1 (cliente)
+  if (panel === 'poliza') {
+    const esExist = document.getElementById('modo-clie-exist')?.style.display !== 'none';
+    if (esExist) {
+      const sel = document.querySelector('[name="cliente_existente"]');
+      if (!sel || !sel.value) { alert('Seleccioná un cliente de la lista.'); return; }
+    } else {
+      const nom = document.querySelector('[name="nombre"]');
+      if (!nom || !nom.value.trim()) { alert('Ingresá el nombre del cliente.'); return; }
+    }
+  }
+  // Validar paso 2 (póliza)
+  if (panel === 'bien') {
+    const nro = document.querySelector('[name="nro"]');
+    const comp = document.querySelector('[name="compania"]');
+    if (!nro || !nro.value.trim()) { alert('Ingresá el número de póliza.'); return; }
+    if (!comp || !comp.value) { alert('Seleccioná una compañía.'); return; }
+  }
+  const tabs = document.querySelectorAll('.alta-tab');
+  switchAltaTab(panel, tabs[tabIndex]);
 };
 
 // Almacén temporal de datos mientras se navega entre tabs
@@ -1205,69 +1248,96 @@ window.saveRecord = async function() {
 
   if (!isUnified) { return _origSaveRecord(); }
 
-  // Guardar panel actual antes de recolectar
+  // Recolectar datos de TODOS los panels + caché
   _guardarDatosPanelActual();
   const body = document.getElementById('modal-body');
-  // Recolectar datos de TODOS los panels (visibles o no) + caché
   const raw = { ...window._formCache };
   body.querySelectorAll('[name]').forEach(el => {
     if(el.value.trim()) raw[el.name] = el.value.trim();
   });
 
   // Determinar nombre del cliente
-  let nombreCliente = '';
   const modoExist = document.getElementById('modo-clie-exist');
   const esExistente = modoExist && modoExist.style.display !== 'none';
+  let nombreCliente = esExistente ? (raw.cliente_existente||'') : (raw.nombre||'');
 
-  if (esExistente) {
-    nombreCliente = raw.cliente_existente || '';
-    if (!nombreCliente) { alert('Seleccioná un cliente existente.'); return; }
-  } else {
-    nombreCliente = raw.nombre || '';
-    if (!nombreCliente) { alert('Ingresá el nombre del cliente.'); return; }
-  }
+  if (!nombreCliente) { alert('Falta el nombre del cliente. Volvé al paso 1.'); return; }
+  if (!raw.nro)       { alert('Falta el número de póliza. Completá el paso 2.'); return; }
+  if (!raw.compania)  { alert('Falta seleccionar la compañía. Completá el paso 2.'); return; }
 
-  if (!raw.nro) { alert('El número de póliza es obligatorio.'); switchAltaTab('poliza', document.querySelectorAll('.alta-tab')[1]); return; }
-  if (!raw.compania) { alert('Seleccioná una compañía.'); switchAltaTab('poliza', document.querySelectorAll('.alta-tab')[1]); return; }
+  const now = new Date().toISOString();
+  const uid = window._state.user?.uid || '';
 
-  const ts = { creadoEn: { seconds: Date.now()/1000 }, usuarioId: window._state.user?.uid || '' };
+  const polizaData = {
+    nro:          raw.nro || '',
+    cliente:      nombreCliente,
+    ramo:         raw.ramo || '',
+    compania:     raw.compania || '',
+    productor:    raw.productor || '',
+    estado:       raw.estado || 'vigente',
+    prima:        raw.prima || '',
+    venc_desde:   raw.venc_desde || '',
+    venc_hasta:   raw.venc_hasta || '',
+    suma:         raw.suma || '',
+    observaciones:raw.obs_poliza || '',
+    creadoEn:     now,
+    usuarioId:    uid
+  };
+
+  const tipoBien = raw.tipo_bien || 'vehiculo';
+  const bienData = tipoBien !== 'sin_bien' ? {
+    tipo:        tipoBien,
+    cliente:     nombreCliente,
+    patente:     raw.patente || '',
+    marca:       raw.marca || '',
+    modelo:      raw.modelo || '',
+    anio:        raw.anio || '',
+    motor:       raw.motor || '',
+    chasis:      raw.chasis || '',
+    uso:         raw.uso || '',
+    valor:       raw.valor || '',
+    direccion:   raw.direccion || '',
+    superficie:  raw.superficie || '',
+    asegurado:   raw.asegurado || '',
+    dni_aseg:    raw.dni_aseg || '',
+    nac_aseg:    raw.nac_aseg || '',
+    observaciones:raw.observaciones || '',
+    creadoEn:    now,
+    usuarioId:   uid
+  } : null;
+
+  const clienteData = !esExistente ? {
+    nombre:    nombreCliente,
+    dni:       raw.dni || '',
+    fecha_nac: raw.fecha_nac || '',
+    email:     raw.email || '',
+    tel_cel:   raw.tel_cel || '',
+    tel_fijo:  raw.tel_fijo || '',
+    domicilio: raw.domicilio || '',
+    creadoEn:  now,
+    usuarioId: uid
+  } : null;
 
   try {
-    // 1. Guardar cliente nuevo si corresponde
-    if (!esExistente) {
-      const clienteData = { nombre:nombreCliente, dni:raw.dni||'', fecha_nac:raw.fecha_nac||'', email:raw.email||'', tel_cel:raw.tel_cel||'', tel_fijo:raw.tel_fijo||'', domicilio:raw.domicilio||'', ...ts };
-      if (window._db) {
-        await window._col('clientes') && (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")).addDoc(window._col('clientes'), clienteData);
-      }
-    }
-
-    // 2. Guardar póliza
-    const polizaData = { nro:raw.nro, cliente:nombreCliente, ramo:raw.ramo||'', compania:raw.compania, productor:raw.productor||'', estado:raw.estado||'vigente', prima:raw.prima||'', venc_desde:raw.venc_desde||'', venc_hasta:raw.venc_hasta||'', suma:raw.suma||'', observaciones:raw.obs_poliza||'', ...ts };
-
-    // 3. Guardar bien asegurado si hay
-    const tipoBien = raw.tipo_bien || 'vehiculo';
-    const bienData = tipoBien !== 'sin_bien' ? { tipo:tipoBien, cliente:nombreCliente, patente:raw.patente||'', marca:raw.marca||'', modelo:raw.modelo||'', anio:raw.anio||'', motor:raw.motor||'', chasis:raw.chasis||'', uso:raw.uso||'', valor:raw.valor||'', direccion:raw.direccion||'', superficie:raw.superficie||'', asegurado:raw.asegurado||'', dni_aseg:raw.dni_aseg||'', nac_aseg:raw.nac_aseg||'', observaciones:raw.observaciones||'', ...ts } : null;
-
     if (window._db && window._col) {
-      const { addDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      const { addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      if (clienteData) await addDoc(window._col('clientes'), clienteData);
       await addDoc(window._col('polizas'), polizaData);
       if (bienData) await addDoc(window._col('bienes'), bienData);
-      if (!esExistente) await addDoc(window._col('clientes'), { nombre:nombreCliente, dni:raw.dni||'', fecha_nac:raw.fecha_nac||'', email:raw.email||'', tel_cel:raw.tel_cel||'', tel_fijo:raw.tel_fijo||'', domicilio:raw.domicilio||'', ...ts });
     } else {
-      // Modo demo sin Firebase — guardar en memoria
-      window._state.data.polizas.unshift({ id:'local-'+Date.now(), ...polizaData });
-      if (bienData) window._state.data.bienes.unshift({ id:'local-b-'+Date.now(), ...bienData });
-      if (!esExistente) window._state.data.clientes.push({ id:'local-c-'+Date.now(), nombre:nombreCliente, dni:raw.dni||'', email:raw.email||'', tel_cel:raw.tel_cel||'', domicilio:raw.domicilio||'' });
+      // Modo sin Firebase — guardar en memoria local
+      if (clienteData) window._state.data.clientes.push({ id:'loc-c-'+Date.now(), ...clienteData });
+      window._state.data.polizas.unshift({ id:'loc-p-'+Date.now(), ...polizaData });
+      if (bienData) window._state.data.bienes.unshift({ id:'loc-b-'+Date.now(), ...bienData });
     }
-
     if (window.loadAllData) await window.loadAllData();
     closeModal();
+    // Ir a pólizas para ver el resultado
     showSection('polizas', document.querySelector('[data-section="polizas"]'));
   } catch(e) {
     console.error(e);
     alert('Error al guardar: ' + e.message);
   }
-};
 
   </script>
 </body>
