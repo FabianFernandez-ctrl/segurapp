@@ -1186,15 +1186,20 @@ window.saveRecord = async function() {
   // ── FORMULARIO UNIFICADO (póliza + cliente + bien) ──
   _guardarDatosPanelActual();
   const raw = { ...window._formCache };
-  // También leer inputs visibles por si acaso
   document.querySelectorAll('.alta-panel [name]').forEach(el => {
     if (el.value !== '') raw[el.name] = el.value;
   });
+
+  // DEBUG
+  console.log('RAW DATA:', JSON.stringify(raw));
+  console.log('_db:', !!window._db, '_col:', !!window._col, 'user:', window._state.user?.uid);
 
   // Determinar cliente
   const modoExist  = document.getElementById('modo-clie-exist');
   const esExistente = modoExist && modoExist.style.display !== 'none';
   const nombreCliente = esExistente ? (raw.cliente_existente||'') : (raw.nombre||'');
+
+  console.log('cliente:', nombreCliente, 'nro:', raw.nro, 'compania:', raw.compania);
 
   // Validaciones
   if (!nombreCliente) { alert('Falta el nombre del cliente. Completá el Paso 1.'); return; }
