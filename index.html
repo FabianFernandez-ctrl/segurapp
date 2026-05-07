@@ -935,6 +935,7 @@ function buildAltaUnificadaForm(d={}) {
           <button type="button" class="btn" id="btn-clie-exist" onclick="toggleClienteMode('existente')">Cliente existente</button>
         </div>
       </div>
+      <input type="hidden" name="cliente_modo" value="${d.cliente_modo||'nuevo'}">
       <div id="modo-clie-exist" style="display:none">
         <div class="form-group"><label>Seleccionar cliente *</label>
           <select name="cliente_existente" onchange="autocompletarCliente(this.value)">
@@ -1014,6 +1015,7 @@ window.switchAltaTab = function(panel, el) {
 
 // Almacén temporal de datos mientras se navega entre tabs
 window._formCache = {};
+window._clienteMode = 'nuevo';
 
 function _guardarDatosPanelActual() {
   // Guardar TODOS los paneles, no solo el activo
@@ -1030,13 +1032,14 @@ function _restaurarDatosPanel() {
   const panelActivo = document.querySelector('.alta-panel.active');
   if (!panelActivo) return;
   panelActivo.querySelectorAll('[name]').forEach(el => {
-    if (window._formCache[el.name] !== undefined && window._formCache[el.name] !== '') {
+    if (window._formCache[el.name] !== undefined) {
       el.value = window._formCache[el.name];
     }
   });
 }
 
 window.toggleClienteMode = function(modo) {
+  window._clienteMode = modo;
   const esNuevo = modo==='nuevo';
   document.getElementById('modo-clie-nuevo').style.display = esNuevo?'block':'none';
   document.getElementById('modo-clie-exist').style.display = esNuevo?'none':'block';
@@ -1178,24 +1181,18 @@ window.saveRecord = async function() {
     if (el.value !== '') raw[el.name] = el.value;
   });
 
-  // DEBUG
-  console.log('RAW DATA:', JSON.stringify(raw));
-  console.log('_db:', !!window._db, '_col:', !!window._col, 'user:', window._state.user?.uid);
+  const modoExistente = window._clienteMode === 'existente';
+  const nombreCliente = modoExistente ? (raw.cliente_existente||'') : (raw.nombre||'');
 
-  // Determinar cliente
-  const modoExist  = document.getElementById('modo-clie-exist');
-  const esExistente = modoExist && modoExist.style.display !== 'none';
-  const nombreCliente = esExistente ? (raw.cliente_existente||'') : (raw.nombre||'');
+  const missingCliente = modoExistente ? !raw.cliente_existente : !raw.nombre;
+  if (missingCliente) {
+    alert('Falta seleccionar o cargar el cliente en el Paso 1.');
+    return;
+  }
+  if (!raw.nro)      { alert('Falta el número de póliza. Completá el Paso 2.'); return; }
+  if (!raw.compania) { alert('Falta seleccionar la compañía. Completá el Paso 2.'); return; }
 
-  console.log('cliente:', nombreCliente, 'nro:', raw.nro, 'compania:', raw.compania);
-
-  // Validaciones
-  if (!nombreCliente) { alert('Falta el nombre del cliente. Completá el Paso 1.'); return; }
-  if (!raw.nro)       { alert('Falta el número de póliza. Completá el Paso 2.'); return; }
-  if (!raw.compania)  { alert('Falta seleccionar la compañía. Completá el Paso 2.'); return; }
-
-  // Armar objetos a guardar
-  const clienteData = !esExistente ? {
+  const clienteData = !modoExistente ? {
     nombre:    nombreCliente,
     dni:       raw.dni       || '',
     fecha_nac: raw.fecha_nac || '',
