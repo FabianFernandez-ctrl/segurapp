@@ -241,8 +241,8 @@ tbody tr:hover td { background: var(--bg); }
 .tab-num { width:20px; height:20px; border-radius:50%; background:var(--bg2); color:var(--text3); font-size:11px; display:inline-flex; align-items:center; justify-content:center; font-weight:600; }
 .alta-tab.active .tab-num { background:var(--blue); color:#fff; }
 .alta-panels { min-height:300px; }
-.alta-panel { display:none; }
-.alta-panel.active { display:block; }
+.alta-panel { display:block; visibility:hidden; height:0; overflow:hidden; pointer-events:none; }
+.alta-panel.active { visibility:visible; height:auto; overflow:visible; pointer-events:auto; }
 
   </style>
 </head>
@@ -1012,10 +1012,13 @@ window.switchAltaTab = function(panel, el) {
 window._formCache = {};
 
 function _guardarDatosPanelActual() {
-  const panelActivo = document.querySelector('.alta-panel.active');
-  if (!panelActivo) return;
-  panelActivo.querySelectorAll('[name]').forEach(el => {
-    window._formCache[el.name] = el.value;
+  // Guardar TODOS los paneles, no solo el activo
+  document.querySelectorAll('.alta-panel').forEach(panel => {
+    panel.querySelectorAll('[name]').forEach(el => {
+      if (el.value !== undefined) {
+        window._formCache[el.name] = el.value;
+      }
+    });
   });
 }
 
