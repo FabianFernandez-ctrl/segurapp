@@ -477,7 +477,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       await Promise.all(['clientes','polizas','bienes','siniestros','productores','companias'].map(load));
     };
 
-    window.saveRecord = async () => {
+    window._firebaseSave = async () => {
       const sec  = window._state.section;
       const data = window.collectFormData();
       if (!data) return;
@@ -496,6 +496,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         alert('Error al guardar: ' + e.message);
       }
     };
+    // saveRecord se define en app.js más abajo — no sobreescribir acá
+    window.saveRecord = window._firebaseSave;
 
     window.deleteRecord = async (sec, id) => {
       if (!confirm('¿Eliminar este registro?')) return;
@@ -514,6 +516,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     // ── EXPORTAR funciones Firebase para uso en app.js ──
     window._db = db;
     window._col = col;
+    window._addDoc = addDoc;
+    window._serverTimestamp = serverTimestamp;
   </script>
 
   <script>
@@ -1161,40 +1165,29 @@ window.saveRecord = async function() {
   const sec = window._state.section;
   const isUnified = (sec === 'dashboard' || sec === 'vencimientos' || sec === 'polizas' || sec === 'bienes');
 
-  // Para secciones simples (clientes, productores, companias, siniestros) usar Firebase directo
+  // Para secciones simples usar el save de Firebase
   if (!isUnified) {
-    const data = window.collectFormData();
-    if (!data) return;
-    try {
-      const { addDoc, doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-      data.creadoEn  = serverTimestamp();
-      data.usuarioId = window._state.user?.uid || '';
-      if (window._state.editingId) {
-        await updateDoc(doc(window._db, sec, window._state.editingId), data);
-      } else {
-        await addDoc(window._col(sec), data);
-      }
-      await window.loadAllData();
-      closeModal();
-      renderSection(sec);
-    } catch(e) {
-      alert('Error al guardar: ' + e.message);
-    }
+    await window._firebaseSave();
     return;
   }
 
   // ── FORMULARIO UNIFICADO (póliza + cliente + bien) ──
   _guardarDatosPanelActual();
   const raw = { ...window._formCache };
-  // También leer inputs visibles por si acaso
   document.querySelectorAll('.alta-panel [name]').forEach(el => {
     if (el.value !== '') raw[el.name] = el.value;
   });
+
+  // DEBUG
+  console.log('RAW DATA:', JSON.stringify(raw));
+  console.log('_db:', !!window._db, '_col:', !!window._col, 'user:', window._state.user?.uid);
 
   // Determinar cliente
   const modoExist  = document.getElementById('modo-clie-exist');
   const esExistente = modoExist && modoExist.style.display !== 'none';
   const nombreCliente = esExistente ? (raw.cliente_existente||'') : (raw.nombre||'');
+
+  console.log('cliente:', nombreCliente, 'nro:', raw.nro, 'compania:', raw.compania);
 
   // Validaciones
   if (!nombreCliente) { alert('Falta el nombre del cliente. Completá el Paso 1.'); return; }
@@ -1246,12 +1239,11 @@ window.saveRecord = async function() {
   } : null;
 
   try {
-    const { addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const ts = { creadoEn: serverTimestamp(), usuarioId: window._state.user?.uid || '' };
+    const ts = { creadoEn: window._serverTimestamp(), usuarioId: window._state.user?.uid || '' };
 
-    if (clienteData) await addDoc(window._col('clientes'), { ...clienteData, ...ts });
-    await addDoc(window._col('polizas'), { ...polizaData, ...ts });
-    if (bienData)    await addDoc(window._col('bienes'),   { ...bienData,   ...ts });
+    if (clienteData) await window._addDoc(window._col('clientes'), { ...clienteData, ...ts });
+    await window._addDoc(window._col('polizas'), { ...polizaData, ...ts });
+    if (bienData)    await window._addDoc(window._col('bienes'),   { ...bienData,   ...ts });
 
     await window.loadAllData();
     closeModal();
