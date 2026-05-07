@@ -496,8 +496,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
         alert('Error al guardar: ' + e.message);
       }
     };
-    // saveRecord se define en app.js más abajo — no sobreescribir acá
-    window.saveRecord = window._firebaseSave;
 
     window.deleteRecord = async (sec, id) => {
       if (!confirm('¿Eliminar este registro?')) return;
