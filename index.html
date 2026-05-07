@@ -1157,69 +1157,103 @@ window.collectFormData = function() {
 
 // ── SAVE UNIFICADO ─────────────────────────────────
 // Sobreescribimos saveRecord para el formulario unificado
-const _origSaveRecord = window.saveRecord;
 window.saveRecord = async function() {
   const sec = window._state.section;
   const isUnified = (sec === 'dashboard' || sec === 'vencimientos' || sec === 'polizas' || sec === 'bienes');
 
-  if (!isUnified) { return _origSaveRecord(); }
-
-  // Guardar panel actual antes de recolectar
-  _guardarDatosPanelActual();
-  const body = document.getElementById('modal-body');
-  // Recolectar datos de TODOS los panels (visibles o no) + caché
-  const raw = { ...window._formCache };
-  body.querySelectorAll('[name]').forEach(el => {
-    if(el.value.trim()) raw[el.name] = el.value.trim();
-  });
-
-  // Determinar nombre del cliente
-  let nombreCliente = '';
-  const modoExist = document.getElementById('modo-clie-exist');
-  const esExistente = modoExist && modoExist.style.display !== 'none';
-
-  if (esExistente) {
-    nombreCliente = raw.cliente_existente || '';
-    if (!nombreCliente) { alert('Seleccioná un cliente existente.'); return; }
-  } else {
-    nombreCliente = raw.nombre || '';
-    if (!nombreCliente) { alert('Ingresá el nombre del cliente.'); return; }
+  // Para secciones simples (clientes, productores, companias, siniestros) usar Firebase directo
+  if (!isUnified) {
+    const data = window.collectFormData();
+    if (!data) return;
+    try {
+      const { addDoc, doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      data.creadoEn  = serverTimestamp();
+      data.usuarioId = window._state.user?.uid || '';
+      if (window._state.editingId) {
+        await updateDoc(doc(window._db, sec, window._state.editingId), data);
+      } else {
+        await addDoc(window._col(sec), data);
+      }
+      await window.loadAllData();
+      closeModal();
+      renderSection(sec);
+    } catch(e) {
+      alert('Error al guardar: ' + e.message);
+    }
+    return;
   }
 
-  if (!raw.nro) { alert('El número de póliza es obligatorio.'); switchAltaTab('poliza', document.querySelectorAll('.alta-tab')[1]); return; }
-  if (!raw.compania) { alert('Seleccioná una compañía.'); switchAltaTab('poliza', document.querySelectorAll('.alta-tab')[1]); return; }
+  // ── FORMULARIO UNIFICADO (póliza + cliente + bien) ──
+  _guardarDatosPanelActual();
+  const raw = { ...window._formCache };
+  // También leer inputs visibles por si acaso
+  document.querySelectorAll('.alta-panel [name]').forEach(el => {
+    if (el.value !== '') raw[el.name] = el.value;
+  });
 
-  const ts = { creadoEn: { seconds: Date.now()/1000 }, usuarioId: window._state.user?.uid || '' };
+  // Determinar cliente
+  const modoExist  = document.getElementById('modo-clie-exist');
+  const esExistente = modoExist && modoExist.style.display !== 'none';
+  const nombreCliente = esExistente ? (raw.cliente_existente||'') : (raw.nombre||'');
+
+  // Validaciones
+  if (!nombreCliente) { alert('Falta el nombre del cliente. Completá el Paso 1.'); return; }
+  if (!raw.nro)       { alert('Falta el número de póliza. Completá el Paso 2.'); return; }
+  if (!raw.compania)  { alert('Falta seleccionar la compañía. Completá el Paso 2.'); return; }
+
+  // Armar objetos a guardar
+  const clienteData = !esExistente ? {
+    nombre:    nombreCliente,
+    dni:       raw.dni       || '',
+    fecha_nac: raw.fecha_nac || '',
+    email:     raw.email     || '',
+    tel_cel:   raw.tel_cel   || '',
+    tel_fijo:  raw.tel_fijo  || '',
+    domicilio: raw.domicilio || ''
+  } : null;
+
+  const polizaData = {
+    nro:          raw.nro,
+    cliente:      nombreCliente,
+    ramo:         raw.ramo        || '',
+    compania:     raw.compania    || '',
+    productor:    raw.productor   || '',
+    estado:       raw.estado      || 'vigente',
+    prima:        raw.prima       || '',
+    venc_desde:   raw.venc_desde  || '',
+    venc_hasta:   raw.venc_hasta  || '',
+    suma:         raw.suma        || '',
+    observaciones:raw.obs_poliza  || ''
+  };
+
+  const tipoBien = raw.tipo_bien || 'vehiculo';
+  const bienData = tipoBien !== 'sin_bien' ? {
+    tipo:        tipoBien,
+    cliente:     nombreCliente,
+    patente:     raw.patente    || '',
+    marca:       raw.marca      || '',
+    modelo:      raw.modelo     || '',
+    anio:        raw.anio       || '',
+    motor:       raw.motor      || '',
+    chasis:      raw.chasis     || '',
+    uso:         raw.uso        || '',
+    valor:       raw.valor      || '',
+    direccion:   raw.direccion  || '',
+    superficie:  raw.superficie || '',
+    asegurado:   raw.asegurado  || '',
+    dni_aseg:    raw.dni_aseg   || '',
+    nac_aseg:    raw.nac_aseg   || ''
+  } : null;
 
   try {
-    // 1. Guardar cliente nuevo si corresponde
-    if (!esExistente) {
-      const clienteData = { nombre:nombreCliente, dni:raw.dni||'', fecha_nac:raw.fecha_nac||'', email:raw.email||'', tel_cel:raw.tel_cel||'', tel_fijo:raw.tel_fijo||'', domicilio:raw.domicilio||'', ...ts };
-      if (window._db) {
-        await window._col('clientes') && (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")).addDoc(window._col('clientes'), clienteData);
-      }
-    }
+    const { addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const ts = { creadoEn: serverTimestamp(), usuarioId: window._state.user?.uid || '' };
 
-    // 2. Guardar póliza
-    const polizaData = { nro:raw.nro, cliente:nombreCliente, ramo:raw.ramo||'', compania:raw.compania, productor:raw.productor||'', estado:raw.estado||'vigente', prima:raw.prima||'', venc_desde:raw.venc_desde||'', venc_hasta:raw.venc_hasta||'', suma:raw.suma||'', observaciones:raw.obs_poliza||'', ...ts };
+    if (clienteData) await addDoc(window._col('clientes'), { ...clienteData, ...ts });
+    await addDoc(window._col('polizas'), { ...polizaData, ...ts });
+    if (bienData)    await addDoc(window._col('bienes'),   { ...bienData,   ...ts });
 
-    // 3. Guardar bien asegurado si hay
-    const tipoBien = raw.tipo_bien || 'vehiculo';
-    const bienData = tipoBien !== 'sin_bien' ? { tipo:tipoBien, cliente:nombreCliente, patente:raw.patente||'', marca:raw.marca||'', modelo:raw.modelo||'', anio:raw.anio||'', motor:raw.motor||'', chasis:raw.chasis||'', uso:raw.uso||'', valor:raw.valor||'', direccion:raw.direccion||'', superficie:raw.superficie||'', asegurado:raw.asegurado||'', dni_aseg:raw.dni_aseg||'', nac_aseg:raw.nac_aseg||'', observaciones:raw.observaciones||'', ...ts } : null;
-
-    if (window._db && window._col) {
-      const { addDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-      await addDoc(window._col('polizas'), polizaData);
-      if (bienData) await addDoc(window._col('bienes'), bienData);
-      if (!esExistente) await addDoc(window._col('clientes'), { nombre:nombreCliente, dni:raw.dni||'', fecha_nac:raw.fecha_nac||'', email:raw.email||'', tel_cel:raw.tel_cel||'', tel_fijo:raw.tel_fijo||'', domicilio:raw.domicilio||'', ...ts });
-    } else {
-      // Modo demo sin Firebase — guardar en memoria
-      window._state.data.polizas.unshift({ id:'local-'+Date.now(), ...polizaData });
-      if (bienData) window._state.data.bienes.unshift({ id:'local-b-'+Date.now(), ...bienData });
-      if (!esExistente) window._state.data.clientes.push({ id:'local-c-'+Date.now(), nombre:nombreCliente, dni:raw.dni||'', email:raw.email||'', tel_cel:raw.tel_cel||'', domicilio:raw.domicilio||'' });
-    }
-
-    if (window.loadAllData) await window.loadAllData();
+    await window.loadAllData();
     closeModal();
     showSection('polizas', document.querySelector('[data-section="polizas"]'));
   } catch(e) {
@@ -1227,7 +1261,6 @@ window.saveRecord = async function() {
     alert('Error al guardar: ' + e.message);
   }
 };
-
   </script>
 </body>
 </html>
