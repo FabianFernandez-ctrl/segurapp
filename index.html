@@ -1,0 +1,2819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SegurApp — Gestión de Cartera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+/* ── RESET & BASE ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f8fafc;
+  --bg2:       #f1f5f9;
+  --white:     #ffffff;
+  --border:    #e2e8f0;
+  --border2:   #cbd5e1;
+  --text:      #0f172a;
+  --text2:     #475569;
+  --text3:     #94a3b8;
+  --blue:      #185FA5;
+  --blue-light:#E6F1FB;
+  --blue-dark: #0C447C;
+  --green:     #3B6D11;
+  --green-bg:  #EAF3DE;
+  --amber:     #854F0B;
+  --amber-bg:  #FAEEDA;
+  --red:       #A32D2D;
+  --red-bg:    #FCEBEB;
+  --radius:    8px;
+  --radius-lg: 12px;
+  --shadow:    0 1px 3px rgba(0,0,0,.08);
+}
+
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+/* ── SCROLLBAR SIEMPRE VISIBLE ─────────────────── */
+html { overflow-y: scroll; }
+
+/* Scrollbar vertical y horizontal global */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; border: 2px solid #f1f5f9; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+::-webkit-scrollbar-corner { background: #f1f5f9; }
+
+/* Forzar overflow en contenedores scrollables */
+.content    { overflow: scroll !important; }
+.table-wrap { overflow-x: auto !important; overflow-y: visible; }
+.modal-body { overflow-y: scroll !important; }
+.nav        { overflow-y: scroll !important; }
+
+/* Firefox */
+.content, .table-wrap, .modal-body, .nav {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* ── LOGIN ────────────────────────────────────── */
+.login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; background: var(--bg);
+}
+.login-box {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 40px 36px; width: 380px;
+  box-shadow: var(--shadow);
+}
+.login-logo { text-align: center; margin-bottom: 28px; }
+.logo-icon {
+  width: 48px; height: 48px; background: var(--blue); color: #fff;
+  border-radius: 12px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 22px; font-weight: 700; margin-bottom: 12px;
+}
+.login-logo h1 { font-size: 20px; font-weight: 600; }
+.login-logo p  { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.login-footer  { text-align: center; margin-top: 16px; font-size: 13px; color: var(--text2); }
+.login-footer a { color: var(--blue); text-decoration: none; }
+.error-msg { background: var(--red-bg); color: var(--red); font-size: 13px; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 12px; }
+
+/* ── APP LAYOUT ───────────────────────────────── */
+#app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ──────────────────────────────────── */
+.sidebar {
+  width: 224px; flex-shrink: 0; background: var(--white);
+  border-right: 1px solid var(--border); display: flex;
+  flex-direction: column; height: 100vh;
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 16px; border-bottom: 1px solid var(--border);
+}
+.logo-icon-sm {
+  width: 32px; height: 32px; background: var(--blue); color: #fff;
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.sidebar-title { font-size: 14px; font-weight: 600; }
+.sidebar-sub   { font-size: 11px; color: var(--text3); }
+.nav           { flex: 1; padding: 10px 8px; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+  border-radius: var(--radius); cursor: pointer; font-size: 13px;
+  color: var(--text2); margin-bottom: 2px; transition: all .12s;
+  border: 1px solid transparent;
+}
+.nav-item:hover  { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--blue-light); color: var(--blue); font-weight: 500; border-color: #c5dcf5; }
+.sidebar-user {
+  display: flex; align-items: center; gap: 9px;
+  padding: 12px 14px; border-top: 1px solid var(--border);
+}
+.user-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--blue-light);
+  color: var(--blue); display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 13px; flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; font-size: 12px; font-weight: 500; overflow: hidden; }
+.btn-logout {
+  background: none; border: none; cursor: pointer; color: var(--text3);
+  padding: 4px; border-radius: 6px; display: flex; align-items: center;
+}
+.btn-logout:hover { color: var(--red); background: var(--red-bg); }
+
+/* ── MAIN ─────────────────────────────────────── */
+.main   { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.topbar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.topbar h2 { font-size: 16px; font-weight: 600; }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+.content { flex: 1; overflow-y: scroll; overflow-x: auto; padding: 20px; min-width: 0; }
+
+/* ── FORMS ────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.form-group label { font-size: 12px; font-weight: 500; color: var(--text2); }
+input[type=text], input[type=email], input[type=password], input[type=number],
+input[type=date], input[type=tel], select, textarea {
+  width: 100%; padding: 8px 11px; border: 1px solid var(--border2);
+  border-radius: var(--radius); font-size: 13px; font-family: inherit;
+  background: var(--white); color: var(--text); transition: border .12s;
+  text-transform: uppercase;
+}
+input[type=date], input[type=number], input[type=email], input[type=password], .search-input { text-transform: none; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,.1); }
+textarea { resize: vertical; min-height: 70px; }
+.search-input { width: 360px; padding: 9px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; font-family: inherit; background: var(--bg); color: var(--text); }
+.search-input:focus { outline: none; border-color: var(--blue); background: var(--white); }
+
+/* ── BUTTONS ──────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius); font-size: 13px;
+  font-family: inherit; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--border2); background: var(--white);
+  color: var(--text); transition: all .12s;
+}
+.btn:hover      { background: var(--bg2); }
+.btn-primary    { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+.btn-full       { width: 100%; justify-content: center; padding: 10px; margin-top: 4px; }
+.btn-danger     { color: var(--red); border-color: #fca5a5; background: var(--red-bg); }
+.btn-danger:hover { background: #fee2e2; }
+.btn-sm         { padding: 4px 9px; font-size: 12px; }
+
+/* ── CARDS ────────────────────────────────────── */
+.card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px;
+  overflow: hidden; min-width: 0;
+}
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.card-title  { font-size: 14px; font-weight: 600; }
+
+/* ── STATS GRID ───────────────────────────────── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+.stat-card  { background: var(--bg2); border-radius: var(--radius-lg); padding: 16px; }
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.stat-value { font-size: 28px; font-weight: 600; line-height: 1; }
+.stat-sub   { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ── TABLE ────────────────────────────────────── */
+.table-wrap  { overflow-x: auto; }
+table        { width: 100%; border-collapse: collapse; font-size: 13px; }
+th           { text-align: left; padding: 8px 12px; color: var(--text3); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td           { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--bg); }
+.td-actions  { display: flex; gap: 6px; }
+table.polizas-table { font-size: 12px; table-layout: fixed; width: 100%; min-width: 1040px; }
+table.polizas-table th,
+table.polizas-table td { padding: 6px 7px; overflow: hidden; text-overflow: ellipsis; }
+table.polizas-table .avatar { width: 22px; height: 22px; font-size: 9px; }
+table.polizas-table .flex-cell { gap: 5px; min-width: 0; }
+table.polizas-table .flex-cell > :not(.avatar) {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+table.polizas-table .badge { padding: 1px 6px; font-size: 10px; }
+table.polizas-table .td-actions { gap: 3px; flex-wrap: nowrap; }
+table.polizas-table .td-actions .btn-sm { padding: 2px 5px; font-size: 10px; }
+table.polizas-table th.col-cobertura,
+table.polizas-table td.col-cobertura {
+  width: 42px; max-width: 42px; padding-left: 3px; padding-right: 3px;
+  text-align: center; white-space: nowrap;
+}
+table.polizas-table th.col-cobertura {
+  text-transform: none; letter-spacing: 0; font-size: 10px;
+}
+table.polizas-table th.col-nro,
+table.polizas-table td.col-nro { width: 88px; max-width: 88px; white-space: nowrap; font-size: 11px; color: var(--text2); }
+table.polizas-table th.col-cliente,
+table.polizas-table td.col-cliente { width: 118px; max-width: 118px; }
+table.polizas-table th.col-compania,
+table.polizas-table td.col-compania { width: 98px; max-width: 98px; }
+table.polizas-table th.col-productor,
+table.polizas-table td.col-productor { width: 90px; max-width: 90px; white-space: nowrap; font-size: 11px; }
+table.polizas-table th.col-patente,
+table.polizas-table td.col-patente { width: 68px; max-width: 68px; white-space: nowrap; font-weight: 500; }
+table.polizas-table th.col-marca,
+table.polizas-table td.col-marca { width: 100px; max-width: 100px; white-space: nowrap; font-size: 11px; }
+table.polizas-table th.col-fecha,
+table.polizas-table td.col-fecha { width: 78px; max-width: 78px; white-space: nowrap; font-size: 11px; }
+table.polizas-table th.col-canal,
+table.polizas-table td.col-canal { width: 72px; max-width: 72px; text-align: center; }
+table.polizas-table th.col-comision,
+table.polizas-table td.col-comision { width: 58px; max-width: 58px; text-align: center; white-space: nowrap; font-size: 11px; }
+table.polizas-table th.col-ingreso,
+table.polizas-table td.col-ingreso { width: 75px; max-width: 75px; white-space: nowrap; font-size: 11px; }
+table.polizas-table th.col-frec,
+table.polizas-table td.col-frec { width: 58px; max-width: 58px; text-align: center; }
+table.polizas-table th.col-estado,
+table.polizas-table td.col-estado { width: 82px; max-width: 82px; text-align: center; }
+table.polizas-table th.col-acciones,
+table.polizas-table td.col-acciones { width: 132px; max-width: 132px; }
+table.polizas-table td.col-estado select { font-size: 10px !important; padding: 2px 4px !important; max-width: 100%; }
+table.polizas-table th.col-estado,
+table.polizas-table td.col-estado,
+table.polizas-table th.col-acciones,
+table.polizas-table td.col-acciones {
+  position: sticky; z-index: 2; background: var(--white);
+}
+table.polizas-table th.col-estado,
+table.polizas-table td.col-estado { right: 132px; box-shadow: -2px 0 4px rgba(0,0,0,.04); }
+table.polizas-table th.col-acciones,
+table.polizas-table td.col-acciones { right: 0; box-shadow: -2px 0 4px rgba(0,0,0,.06); }
+table.polizas-table tbody tr:hover td.col-estado,
+table.polizas-table tbody tr:hover td.col-acciones { background: var(--bg); }
+
+/* ── BADGES ───────────────────────────────────── */
+.badge       { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-amber { background: var(--amber-bg); color: var(--amber); }
+.badge-red   { background: var(--red-bg); color: var(--red); }
+.badge-blue  { background: var(--blue-light); color: var(--blue-dark); }
+.badge-gray  { background: var(--bg2); color: var(--text2); }
+
+/* ── AVATAR ───────────────────────────────────── */
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--blue-light);
+  color: var(--blue); display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; flex-shrink: 0;
+}
+.flex-cell   { display: flex; align-items: center; gap: 8px; }
+
+/* ── CHIPS / TABS ─────────────────────────────── */
+.chip-row  { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.chip      { padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: var(--white); color: var(--text2); transition: all .12s; }
+.chip:hover{ background: var(--bg2); }
+.chip.active { background: var(--blue-light); color: var(--blue); border-color: #c5dcf5; }
+
+/* ── MODAL ────────────────────────────────────── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(15,23,42,.4);
+  z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+}
+.modal {
+  background: var(--white); border-radius: var(--radius-lg);
+  width: 760px; max-width: calc(100vw - 40px); max-height: 90vh;
+  display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,.15);
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+.modal-header h3 { font-size: 15px; font-weight: 600; }
+.modal-close { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 18px; line-height: 1; padding: 2px 4px; border-radius: 4px; }
+.modal-close:hover { background: var(--bg2); color: var(--text); }
+.modal-body   { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; position: sticky; bottom: 0; background: var(--white); z-index: 2; }
+
+/* ── FORM GRID ────────────────────────────────── */
+.form-grid     { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.form-col-full { grid-column: 1 / -1; }
+.form-section  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text3); margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); grid-column: 1 / -1; }
+
+/* ── ALERT BANNER ─────────────────────────────── */
+.alert { padding: 12px 16px; border-radius: var(--radius); font-size: 13px; margin-bottom: 14px; }
+.alert-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid #f5d69a; }
+.alert-red   { background: var(--red-bg);   color: var(--red);   border: 1px solid #f5a5a5; }
+.alert-blue  { background: var(--blue-light); color: var(--blue-dark); border: 1px solid #c5dcf5; }
+
+/* ── EMPTY STATE ──────────────────────────────── */
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text3); }
+.empty-state svg { margin-bottom: 12px; opacity: .4; }
+.empty-state p { font-size: 14px; }
+
+/* ── RESPONSIVE ───────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar    { width: 56px; }
+  .sidebar-title, .sidebar-sub, .nav-item span, .user-info { display: none; }
+  .nav-item   { justify-content: center; padding: 10px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid  { grid-template-columns: 1fr; }
+  .modal      { width: 100%; margin: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; max-height: 95vh; }
+  .modal-overlay { align-items: flex-end; padding: 0; }
+}
+
+/* ── ALTA UNIFICADA ───────────────────────────── */
+.alta-tabs { display:flex; gap:4px; margin-bottom:18px; border-bottom:1px solid var(--border); padding-bottom:0; }
+.alta-tab  { display:flex; align-items:center; gap:7px; padding:9px 16px; font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+.alta-tab:hover { color:var(--text); }
+.alta-tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+.tab-num { width:20px; height:20px; border-radius:50%; background:var(--bg2); color:var(--text3); font-size:11px; display:inline-flex; align-items:center; justify-content:center; font-weight:600; }
+.alta-tab.active .tab-num { background:var(--blue); color:#fff; }
+.alta-panels { min-height:300px; padding-bottom: 18px; }
+.alta-panel { display:block; visibility:hidden; height:0; overflow:hidden; pointer-events:none; }
+.alta-panel.active { visibility:visible; height:auto; overflow:visible; pointer-events:auto; }
+.alta-panel-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--white);
+  padding-top: 12px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 1;
+}
+
+  
+/* ── BOTÓN FLOTANTE (FAB) ─────────────────────── */
+.fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(24,95,165,.5);
+  transition: all .2s;
+  z-index: 500;
+}
+.fab:hover {
+  background: var(--blue-dark);
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px rgba(24,95,165,.6);
+}
+.fab:active { transform: scale(.95); }
+.fab-label {
+  position: fixed;
+  bottom: 42px;
+  right: 104px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s;
+  z-index: 499;
+}
+.fab:hover ~ .fab-label { opacity: 1; }
+
+</style>
+</head>
+<body>
+<!-- LOGIN SCREEN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-icon">S</div>
+        <h1>SegurApp</h1>
+        <p>Gestión de cartera de seguros</p>
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="login-email" placeholder="usuario@oficina.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="login-password" placeholder="••••••••">
+      </div>
+      <div id="login-error" class="error-msg" style="display:none"></div>
+      <button class="btn btn-primary btn-full" onclick="loginUser()">Ingresar</button>
+      <p class="login-footer">¿Primera vez? <a href="#" onclick="showRegister()">Crear cuenta</a></p>
+    </div>
+  </div>
+
+  <!-- REGISTER SCREEN -->
+  <div id="register-screen" class="login-screen" style="display:none">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-icon">S</div>
+        <h1>Crear cuenta</h1>
+        <p>Registrate para acceder al sistema</p>
+      </div>
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="reg-nombre" placeholder="Tu nombre">
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="reg-email" placeholder="usuario@oficina.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div id="reg-error" class="error-msg" style="display:none"></div>
+      <button class="btn btn-primary btn-full" onclick="registerUser()">Crear cuenta</button>
+      <p class="login-footer"><a href="#" onclick="showLogin()">← Volver al ingreso</a></p>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app" style="display:none">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon-sm">S</div>
+        <div>
+          <div class="sidebar-title">SegurApp</div>
+          <div class="sidebar-sub">Gestión de cartera</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".8"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".8"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/></svg>
+          Inicio
+        </div>
+        <div class="nav-item" data-section="clientes" onclick="showSection('clientes',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" fill="currentColor" opacity=".8"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Clientes
+        </div>
+        <div class="nav-item" data-section="polizas" onclick="showSection('polizas',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3" opacity=".8"/><path d="M5 5h6M5 8h6M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Pólizas
+        </div>
+        <div class="nav-item" data-section="bienes" onclick="showSection('bienes',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="8" width="14" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3" opacity=".8"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M1 9L4 4h8l3 5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          Bienes asegurados
+        </div>
+        <div class="nav-item" data-section="cobranzas" onclick="showSection('cobranzas',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" opacity=".8"/><path d="M8 5v1.5M8 9.5V11M6.5 7a1.5 1.5 0 013 0c0 1-1.5 1.5-1.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Cobranzas
+        </div>
+        <div class="nav-item" data-section="vencimientos" onclick="showSection('vencimientos',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3" opacity=".8"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Vencimientos
+        </div>
+        <div class="nav-item" data-section="siniestros" onclick="showSection('siniestros',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L2 14h12L8 2z" stroke="currentColor" stroke-width="1.3" fill="none" opacity=".8"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Siniestros
+        </div>
+        <div class="nav-item" data-section="companias" onclick="showSection('companias',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="6" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.3" opacity=".8"/><path d="M5 6V4a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Compañías
+        </div>
+        <div class="nav-item" data-section="productores" onclick="showSection('productores',this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" fill="currentColor" opacity=".5"/><circle cx="11" cy="5" r="2.5" fill="currentColor" opacity=".8"/><path d="M1 14c0-2.5 1.5-4 5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".5"/><path d="M6 14c0-2.5 1.5-4 5-4s5 1.5 5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Productores
+        </div>
+      </nav>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="user-info">
+          <div id="user-name">Usuario</div>
+          <div id="user-email" style="font-size:11px;color:#94a3b8"></div>
+        </div>
+        <button class="btn-logout" onclick="logoutUser()" title="Cerrar sesión">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 3l4 5-4 5M14 8H6M3 3H2a1 1 0 00-1 1v8a1 1 0 001 1h1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h2 id="page-title">Resumen general</h2>
+        <div class="topbar-actions">
+          <input class="search-input" type="text" placeholder="Buscar por nombre, DNI, patente..." id="search-input" onkeydown="if(event.key==='Enter') handleSearch(this.value)">
+        <button class="btn btn-primary" onclick="handleSearch(document.getElementById('search-input').value)">Buscar</button>
+          <button class="btn btn-primary" id="btn-nuevo" onclick="openModal()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Nuevo
+          </button>
+        </div>
+      </header>
+
+      <div class="content" id="content">
+        <!-- Sections rendered by JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modal-title">Nuevo registro</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+      <div class="modal-footer">
+        <button id="modal-btn-close" class="btn" onclick="closeModal()">Cancelar</button>
+        <button id="modal-btn-save" class="btn btn-primary" onclick="saveRecord()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+
+  <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ═══════════════════════════════════════════════
+    // 🔧 CONFIGURACIÓN FIREBASE — reemplazá estos valores
+    //    con los de tu proyecto en console.firebase.google.com
+    // ═══════════════════════════════════════════════
+    const firebaseConfig = {
+      apiKey: "AIzaSyAN6xprjeAfylXPil66J7SypbCtsR1SlXE",
+      authDomain: "segurapps-alternativa.firebaseapp.com",
+      projectId: "segurapps-alternativa",
+      storageBucket: "segurapps-alternativa.firebasestorage.app",
+      messagingSenderId: "531374066144",
+      appId: "1:531374066144:web:03df43305498d3b99dc385"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ── ESTADO GLOBAL ──────────────────────────────
+    window._state = {
+      section: 'dashboard',
+      user: null,
+      data: { clientes:[], polizas:[], bienes:[], siniestros:[], productores:[], companias:[] },
+      editingId: null
+    };
+
+    // ── AUTH ───────────────────────────────────────
+    window.loginUser = async () => {
+      const email = document.getElementById('login-email').value.trim();
+      const pass  = document.getElementById('login-password').value;
+      const err   = document.getElementById('login-error');
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        err.style.display = 'none';
+      } catch(e) {
+        err.textContent = 'Email o contraseña incorrectos.';
+        err.style.display = 'block';
+      }
+    };
+
+    window.registerUser = async () => {
+      const nombre = document.getElementById('reg-nombre').value.trim();
+      const email  = document.getElementById('reg-email').value.trim();
+      const pass   = document.getElementById('reg-password').value;
+      const err    = document.getElementById('reg-error');
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(cred.user, { displayName: nombre });
+        err.style.display = 'none';
+      } catch(e) {
+        err.textContent = e.message.includes('email') ? 'Email ya registrado.' : 'Error al crear cuenta. Intentá nuevamente.';
+        err.style.display = 'block';
+      }
+    };
+
+    window.logoutUser = async () => { await signOut(auth); };
+    window.showRegister = () => { document.getElementById('login-screen').style.display='none'; document.getElementById('register-screen').style.display='flex'; };
+    window.showLogin    = () => { document.getElementById('register-screen').style.display='none'; document.getElementById('login-screen').style.display='flex'; };
+
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        window._state.user = user;
+        document.getElementById('login-screen').style.display    = 'none';
+        document.getElementById('register-screen').style.display = 'none';
+        document.getElementById('app').style.display             = 'flex';
+        document.getElementById('user-name').textContent  = user.displayName || 'Usuario';
+        document.getElementById('user-email').textContent = user.email;
+        document.getElementById('user-avatar').textContent = (user.displayName||'U')[0].toUpperCase();
+        await loadAllData();
+        renderSection('dashboard');
+      } else {
+        document.getElementById('app').style.display          = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+      }
+    });
+
+    // ── FIRESTORE HELPERS ──────────────────────────
+    const col = name => collection(db, name);
+
+    window.loadAllData = async () => {
+      const load = async (name) => {
+        const snap = await getDocs(query(col(name), orderBy('creadoEn','desc')));
+        window._state.data[name] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      };
+      await Promise.all(['clientes','polizas','bienes','siniestros','productores','companias','cuotas','historial_nomina'].map(load));
+
+      // ── AUTO-VENCIMIENTO ──────────────────────────────
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      // Vencer pólizas vigentes Y renovadas cuya fecha ya pasó
+      const aVencer = window._state.data.polizas.filter(p => {
+        if (!['vigente','suspendida'].includes(p.estado) || !p.venc_hasta) return false;
+        const v = new Date(p.venc_hasta); v.setHours(0,0,0,0);
+        return v < hoy;
+      });
+      if (aVencer.length) {
+        await Promise.all(aVencer.map(p =>
+          updateDoc(doc(db,'polizas',p.id), { estado:'vencida' })
+            .then(()=>{ p.estado='vencida'; })
+            .catch(()=>{})
+        ));
+      }
+
+      // ── REPARAR INTEGRIDAD DE DATOS ───────────────────
+      await window._repairDataConsistency(db, updateDoc, deleteDoc, doc);
+    };
+
+    // Función de reparación de integridad de datos
+    window._repairDataConsistency = async (db, updateDoc, deleteDoc, doc) => {
+      const D = window._state.data;
+      const clienteIds = new Set(D.clientes.map(c => c.nombre));
+      const polizaIds = new Set(D.polizas.map(p => p.id));
+      const bienIds = new Set(D.bienes.map(b => b.id));
+      
+      // ── 1. ELIMINAR PÓLIZAS HUÉRFANAS (cliente inexistente) ──
+      const polizasHuerfanas = D.polizas.filter(p => !clienteIds.has(p.cliente) && p.cliente);
+      if (polizasHuerfanas.length) {
+        console.warn(`Eliminando ${polizasHuerfanas.length} pólizas huérfanas`);
+        await Promise.all(polizasHuerfanas.map(p =>
+          deleteDoc(doc(db, 'polizas', p.id)).catch(()=>{})
+        ));
+        D.polizas = D.polizas.filter(p => !polizasHuerfanas.find(h => h.id === p.id));
+      }
+
+      // ── 2. ELIMINAR BIENES HUÉRFANOS (cliente inexistente) ──
+      const bienesHuerfanos = D.bienes.filter(b => !clienteIds.has(b.cliente) && b.cliente);
+      if (bienesHuerfanos.length) {
+        console.warn(`Eliminando ${bienesHuerfanos.length} bienes huérfanos`);
+        await Promise.all(bienesHuerfanos.map(b =>
+          deleteDoc(doc(db, 'bienes', b.id)).catch(()=>{})
+        ));
+        D.bienes = D.bienes.filter(b => !bienesHuerfanos.find(h => h.id === b.id));
+      }
+
+      // ── 3. ELIMINAR SINIESTROS HUÉRFANOS (cliente/póliza inexistente) ──
+      const siniestrosHuerfanos = D.siniestros.filter(s => {
+        const clienteOk = !s.cliente || clienteIds.has(s.cliente);
+        const polizaOk = !s.poliza || D.polizas.find(p => p.nro === s.poliza);
+        return !clienteOk || !polizaOk;
+      });
+      if (siniestrosHuerfanos.length) {
+        console.warn(`Eliminando ${siniestrosHuerfanos.length} siniestros huérfanos`);
+        await Promise.all(siniestrosHuerfanos.map(s =>
+          deleteDoc(doc(db, 'siniestros', s.id)).catch(()=>{})
+        ));
+        D.siniestros = D.siniestros.filter(s => !siniestrosHuerfanos.find(h => h.id === s.id));
+      }
+
+      // ── 4. SINCRONIZAR BIENES Y PÓLIZAS (mismo cliente) ──
+      // Si una póliza tiene datos del bien (patente, marca, etc.), sincronizar con el bien
+      D.polizas.forEach(poliza => {
+        if (!poliza.cliente) return;
+        const bien = D.bienes.find(b => b.cliente === poliza.cliente);
+        if (bien && poliza.patente) {
+          // La póliza tiene datos del bien, sincronizar
+          if (!bien.patente && poliza.patente) bien.patente = poliza.patente;
+          if (!bien.marca && poliza.marca) bien.marca = poliza.marca;
+          if (!bien.modelo && poliza.modelo) bien.modelo = poliza.modelo;
+          if (!bien.anio && poliza.anio) bien.anio = poliza.anio;
+          if (!bien.valor && poliza.valor) bien.valor = poliza.valor;
+          if (!bien.cobertura && poliza.cobertura) bien.cobertura = poliza.cobertura;
+        }
+      });
+
+      // ── 5. LIMPIAR CUOTAS HUÉRFANAS ──────────────────────
+      const cuotasHuerfanas = (D.cuotas || []).filter(c => {
+        if (c.polizaId && !polizaIds.has(c.polizaId)) return true;
+        if (c.nroPoliza) {
+          const polizaExiste = D.polizas.find(p => p.nro === c.nroPoliza);
+          if (!polizaExiste) return true;
+        }
+        return false;
+      });
+      if (cuotasHuerfanas.length) {
+        console.warn(`Eliminando ${cuotasHuerfanas.length} cuotas huérfanas`);
+        await Promise.all(cuotasHuerfanas.map(c =>
+          deleteDoc(doc(db, 'cuotas', c.id)).catch(()=>{})
+        ));
+        D.cuotas = (D.cuotas || []).filter(c => !cuotasHuerfanas.find(h => h.id === c.id));
+      }
+
+      // ── 6. VALIDAR CUOTAS CON CLIENTE CONSISTENTE ──────
+      (D.cuotas || []).forEach(c => {
+        if (c.cliente && !clienteIds.has(c.cliente)) {
+          c.cliente_invalido = true;
+        }
+      });
+
+      // ── 7. ELIMINAR CUOTAS DUPLICADAS ──────────────────
+      // Mantener solo una cuota por (polizaId + numero)
+      const cuotasVistas = {};
+      const cuotasDuplicadas = [];
+      (D.cuotas || []).forEach(c => {
+        const key = (c.polizaId||c.nroPoliza||'') + '-' + (c.numero||'');
+        if (!key || key === '-') return;
+        if (cuotasVistas[key]) {
+          cuotasDuplicadas.push(c);
+        } else {
+          cuotasVistas[key] = true;
+        }
+      });
+      if (cuotasDuplicadas.length) {
+        console.warn(`Eliminando ${cuotasDuplicadas.length} cuotas duplicadas`);
+        await Promise.all(cuotasDuplicadas.map(c =>
+          deleteDoc(doc(db, 'cuotas', c.id)).catch(()=>{})
+        ));
+        D.cuotas = (D.cuotas||[]).filter(c => !cuotasDuplicadas.find(d => d.id === c.id));
+      }
+
+      // ── NORMALIZAR CAMPOS A MAYÚSCULAS ────────────────
+      // Corrige registros viejos que quedaron en minúscula
+      const camposUpper = {
+        polizas:  ['nro','cliente','ramo','compania','productor','patente','marca','modelo','observaciones'],
+        bienes:   ['patente','marca','modelo','cliente','motor','chasis','direccion','asegurado'],
+        clientes: ['nombre','dni','domicilio','provincia'],
+        siniestros:['nro','cliente','descripcion','compania'],
+        productores:['nombre','matricula'],
+        companias:['nombre','cuit','contacto']
+      };
+
+      const actualizaciones = [];
+      Object.entries(camposUpper).forEach(([coleccion, campos]) => {
+        (D[coleccion]||[]).forEach(registro => {
+          const cambios = {};
+          campos.forEach(campo => {
+            const val = registro[campo];
+            if (val && typeof val === 'string' && val !== val.toUpperCase()) {
+              cambios[campo] = val.toUpperCase();
+            }
+          });
+          if (Object.keys(cambios).length > 0) {
+            actualizaciones.push(
+              updateDoc(doc(db, coleccion, registro.id), cambios)
+                .then(() => { Object.assign(registro, cambios); })
+                .catch(() => {})
+            );
+          }
+        });
+      });
+      if (actualizaciones.length) {
+        console.log(`Normalizando ${actualizaciones.length} registros a mayúsculas...`);
+        await Promise.all(actualizaciones);
+        console.log('✓ Normalización completada');
+      }
+
+      console.log('✓ Reparación de integridad completada');
+    };
+
+    window._firebaseSave = async () => {
+      const sec  = window._state.section;
+      const data = window.collectFormData();
+      if (!data) return;
+      data.creadoEn = serverTimestamp();
+      data.usuarioId = window._state.user.uid;
+      try {
+        if (window._state.editingId) {
+          await updateDoc(doc(db, sec, window._state.editingId), data);
+        } else {
+          await addDoc(col(sec), data);
+        }
+        await loadAllData();
+        closeModal();
+        renderSection(sec);
+      } catch(e) {
+        alert('Error al guardar: ' + e.message);
+      }
+    };
+
+    window.deleteRecord = async (sec, id) => {
+      if (!confirm('¿Eliminar este registro?')) return;
+      await deleteDoc(doc(db, sec, id));
+      // Si se elimina una póliza, eliminar también sus cuotas asociadas
+      if (sec === 'polizas') {
+        const cuotasAsociadas = (window._state.data.cuotas || []).filter(c => c.polizaId === id);
+        await Promise.all(cuotasAsociadas.map(c => deleteDoc(doc(db, 'cuotas', c.id)).catch(()=>{})));
+      }
+      await loadAllData();
+      renderSection(sec);
+    };
+
+    window.editRecord = (sec, id) => {
+      const item = window._state.data[sec].find(r => r.id === id);
+      if (!item) return;
+      window._state.editingId = id;
+      openModal(item);
+    };
+
+    // ── EXPORTAR funciones Firebase para uso en app.js ──
+    window._db             = db;
+    window._col            = col;
+    window._addDoc         = addDoc;
+    window._updateDoc      = updateDoc;
+    window._deleteDoc      = deleteDoc;
+    window._doc            = doc;
+    window._serverTimestamp= serverTimestamp;
+    window._getDocs        = getDocs;
+    window._query          = query;
+    window._orderBy        = orderBy;
+  </script>
+
+  <script>
+// ══════════════════════════════════════════════════
+//  SegurApp — app.js
+//  Lógica de secciones, renderizado y formularios
+// ══════════════════════════════════════════════════
+
+// ── NAVEGACIÓN ─────────────────────────────────────
+const PAGE_TITLES = {
+  dashboard:   'Resumen general',
+  clientes:    'Clientes',
+  polizas:     'Pólizas',
+  bienes:      'Bienes asegurados',
+  siniestros:  'Siniestros',
+  productores: 'Productores / Agentes',
+  companias:   'Compañías aseguradoras',
+  vencimientos:'Vencimientos',
+  cobranzas:   'Cobranzas'
+};
+
+  // Función manual para reparar datos (ejecutar desde consola: window.repairData())
+  window.repairData = async () => {
+    console.log('🔧 Iniciando reparación manual de datos...');
+    try {
+      await window.loadAllData();
+      const D = window._state.data;
+      console.log('📊 Estado después de reparación:', {
+        clientes: D.clientes.length,
+        polizas: D.polizas.length,
+        bienes: D.bienes.length,
+        siniestros: D.siniestros.length,
+        cuotas: (D.cuotas || []).length
+      });
+      alert('✓ Reparación completada. Revisa la consola para detalles.');
+    } catch(e) {
+      alert('Error en reparación: ' + e.message);
+      console.error('Error:', e);
+    }
+  };
+
+window.showSection = function(sec, el) {
+  window._state.section     = sec;
+  window._state.editingId   = null;
+  document.getElementById('page-title').textContent = PAGE_TITLES[sec] || sec;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else document.querySelector(`[data-section="${sec}"]`)?.classList.add('active');
+  document.getElementById('search-input').value = '';
+  renderSection(sec);
+};
+
+window.renderSection = function(sec) {
+  const content = document.getElementById('content');
+  const D = window._state.data;
+  if      (sec === 'dashboard')   content.innerHTML = renderDashboard(D);
+  else if (sec === 'clientes')    content.innerHTML = renderClientes(D.clientes);
+  else if (sec === 'polizas')     content.innerHTML = renderPolizas(D.polizas, D);
+  else if (sec === 'bienes')      content.innerHTML = renderBienes(D.bienes, D);
+  else if (sec === 'siniestros')  content.innerHTML = renderSiniestros(D.siniestros, D);
+  else if (sec === 'productores') content.innerHTML = renderProductores(D.productores, D);
+  else if (sec === 'companias')   content.innerHTML = renderCompanias(D.companias, D);
+  else if (sec === 'vencimientos')content.innerHTML = renderVencimientos(D.polizas, D);
+  else if (sec === 'cobranzas')  content.innerHTML = renderCobranzas(D.polizas||[], D);
+};
+
+window.setModalButtons = function(showSave, closeLabel='Cancelar') {
+  const save = document.getElementById('modal-btn-save');
+  const close = document.getElementById('modal-btn-close');
+  if (save) save.style.display = showSave ? 'inline-flex' : 'none';
+  if (close) close.textContent = closeLabel;
+};
+
+window.openRecordDetail = function(sec, id) {
+  const item = window._state.data[sec]?.find(r => r.id === id);
+  if (!item) return;
+
+  // Mostrar siempre en modo solo lectura
+  const titles = { polizas:'Detalle de póliza', clientes:'Detalle de cliente', bienes:'Detalle de bien asegurado', siniestros:'Detalle de siniestro', productores:'Detalle de productor', companias:'Detalle de compañía' };
+  document.getElementById('modal-title').textContent = titles[sec] || 'Detalle';
+  document.getElementById('modal-body').innerHTML = renderRecordDetail(sec, item);
+  window.setModalButtons(false, 'Cerrar');
+  document.getElementById('modal-overlay').style.display = 'flex';
+};
+
+function renderRecordDetail(sec, item) {
+  const format = value => value === undefined || value === null || value === '' ? '—' : String(value);
+  const card = (title, fields) => `<div class="card"><div class="card-header"><span class="card-title">${title}</span></div><div class="form-grid">${fields.map(f => `
+      <div class="form-group${f.full?' form-col-full':''}"><label>${f.label}</label>${f.type==='textarea' ? '<textarea readonly>' + format(f.value) + '</textarea>' : '<input type="text" readonly value="' + format(f.value).replace(/"/g, '&quot;') + '">'}</div>`).join('')}</div></div>`;
+
+  if (sec === 'clientes') {
+    const datosCliente = card('Datos del cliente', [
+      { label: 'Apellido y Nombre', value: item.nombre },
+      { label: 'DNI / CUIT', value: item.dni },
+      { label: 'Fecha de nacimiento', value: item.fecha_nac },
+      { label: 'Email', value: item.email },
+      { label: 'Celular', value: item.tel_cel },
+      { label: 'Código postal', value: item.cod_postal },
+      { label: 'Provincia', value: item.provincia },
+      { label: 'Domicilio', value: item.domicilio, full:true },
+      { label: 'Observaciones', value: item.observaciones, full:true, type:'textarea' }
+    ]);
+    
+    const polizasAsociadas = window._state.data.polizas.filter(p => p.cliente === item.nombre);
+    const polizaPrincipal = polizasAsociadas[0] || null;
+    const polizaCard = polizaPrincipal ? card('Póliza principal', [
+      { label: 'Nro. de póliza', value: polizaPrincipal.nro },
+      { label: 'Ramo', value: polizaPrincipal.ramo },
+      { label: 'Cobertura', value: polizaPrincipal.cobertura },
+      { label: 'Compañía', value: polizaPrincipal.compania },
+      { label: 'Productor', value: polizaPrincipal.productor },
+      { label: 'Estado', value: polizaPrincipal.estado },
+      { label: 'Prima', value: polizaPrincipal.prima },
+      { label: 'Vigencia desde', value: polizaPrincipal.venc_desde },
+      { label: 'Vigencia hasta', value: polizaPrincipal.venc_hasta },
+      { label: 'Suma asegurada ($)', value: polizaPrincipal.suma },
+      { label: 'Observaciones', value: polizaPrincipal.observaciones, full:true, type:'textarea' }
+    ]) : `<div class="card"><div class="card-header"><span class="card-title">Póliza principal</span></div><div style="padding:20px;text-align:center;color:var(--text3)">No hay pólizas asociadas</div></div>`;
+    
+    const bienesAsociados = window._state.data.bienes.filter(b => b.cliente === item.nombre);
+    const bienPrincipal = bienesAsociados[0] || null;
+    const bienCard = bienPrincipal ? card('Bien asegurado', [
+      { label: 'Marca', value: bienPrincipal.marca },
+      { label: 'Modelo', value: bienPrincipal.modelo },
+      { label: 'Año', value: bienPrincipal.anio },
+      { label: 'Patente / Identificación', value: bienPrincipal.patente || bienPrincipal.direccion || bienPrincipal.asegurado },
+      { label: 'Cobertura', value: polizaPrincipal?.cobertura }
+    ]) : `<div class="card"><div class="card-header"><span class="card-title">Bien asegurado</span></div><div style="padding:20px;text-align:center;color:var(--text3)">No hay bien asegurado vinculado a esta póliza</div></div>`;
+    
+    const tablaPol = polizasAsociadas.length 
+      ? `<div class="card"><div class="card-header"><span class="card-title">Pólizas</span></div><div class="table-wrap"><table><thead><tr><th>Nro.</th><th>Ramo</th><th>Cobertura</th><th>Compañía</th><th>Prima</th><th>Canal pago</th><th>Estado</th></tr></thead><tbody>${polizasAsociadas.map(p => `<tr><td>${p.nro||'—'}</td><td>${p.ramo||'—'}</td><td>${p.cobertura||'—'}</td><td>${p.compania||'—'}</td><td>${p.prima?'$'+Number(p.prima).toLocaleString('es-AR'):'—'}</td><td>${statusBadge(p.estado)}</td></tr>`).join('')}</tbody></table></div></div>`
+      : `<div class="card"><div class="card-header"><span class="card-title">Pólizas</span></div><div style="padding:20px;text-align:center;color:var(--text3)">No hay pólizas asociadas</div></div>`;
+    
+    const tablaBienes = bienesAsociados.length 
+      ? `<div class="card"><div class="card-header"><span class="card-title">Bienes Asegurados</span></div><div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Identificación</th><th>Marca/Descripción</th><th>Año</th><th>Valor</th></tr></thead><tbody>${bienesAsociados.map(b => `<tr><td>${b.tipo||'—'}</td><td>${b.patente||b.direccion||b.asegurado||'—'}</td><td>${(b.marca ? b.marca + ' ' + (b.modelo||'') : b.descripcion)||'—'}</td><td>${b.anio||'—'}</td><td>${b.valor?'$'+Number(b.valor).toLocaleString('es-AR'):'—'}</td></tr>`).join('')}</tbody></table></div></div>`
+      : `<div class="card"><div class="card-header"><span class="card-title">Bienes Asegurados</span></div><div style="padding:20px;text-align:center;color:var(--text3)">No hay bienes asociados</div></div>`;
+    
+    return datosCliente + polizaCard + bienCard + tablaPol + tablaBienes;
+  }
+  if (sec === 'polizas') {
+    const bienAsociado = window._state.data.bienes.find(b => b.polizaId === item.id)
+      || window._state.data.bienes.find(b => b.cliente === item.cliente);
+    let bienCard;
+    if (!bienAsociado) {
+      bienCard = `<div class="card"><div class="card-header"><span class="card-title">Bien asegurado</span></div><div style="padding:20px;text-align:center;color:var(--text3)">No hay bien asegurado vinculado a esta póliza</div></div>`;
+    } else if (bienAsociado.tipo === 'persona') {
+      const vidas = bienAsociado.vidas && bienAsociado.vidas.length ? bienAsociado.vidas : [{ nombre: bienAsociado.asegurado, dni: bienAsociado.dni_aseg, nac: bienAsociado.nac_aseg }];
+      const vidasCards = vidas.map((v, i) => card(`Persona asegurada ${vidas.length > 1 ? i+1 : ''}`, [
+        { label: 'Apellido y Nombre', value: v.nombre },
+        { label: 'DNI', value: v.dni },
+        { label: 'Fecha de nacimiento', value: v.nac },
+        { label: 'Capital asegurado ($)', value: v.capital }
+      ])).join('');
+      bienCard = card('Bien asegurado — Vida / Persona', [
+        { label: 'Tipo', value: bienAsociado.tipo },
+        { label: 'Cliente', value: bienAsociado.cliente },
+        { label: 'Cobertura', value: bienAsociado.cobertura || item.cobertura },
+        { label: 'Observaciones', value: bienAsociado.observaciones, full:true, type:'textarea' }
+      ]) + vidasCards;
+    } else {
+      bienCard = card('Bien asegurado', [
+        { label: 'Tipo', value: bienAsociado.tipo },
+        { label: 'Patente / Dirección', value: bienAsociado.patente || bienAsociado.direccion },
+        { label: 'Marca', value: bienAsociado.marca },
+        { label: 'Modelo', value: bienAsociado.modelo },
+        { label: 'Año', value: bienAsociado.anio },
+        { label: 'Cobertura', value: bienAsociado.cobertura || item.cobertura }
+      ]);
+    }
+
+    return card('Póliza', [
+      { label: 'Nro. de póliza', value: item.nro },
+      { label: 'Cliente', value: item.cliente },
+      { label: 'Ramo', value: item.ramo },
+      { label: 'Cobertura', value: item.cobertura },
+      { label: 'Compañía', value: item.compania },
+      { label: 'Productor', value: item.productor },
+      { label: 'Estado', value: item.estado },
+      { label: 'Prima', value: item.prima },
+      { label: 'Vigencia desde', value: item.venc_desde },
+      { label: 'Vigencia hasta', value: item.venc_hasta },
+      { label: 'Suma asegurada ($)', value: item.suma },
+      { label: 'Observaciones', value: item.observaciones, full:true, type:'textarea' }
+    ]) + bienCard;
+  }
+  if (sec === 'bienes') {
+    const polizaAsociada = window._state.data.polizas.find(p => p.id === item.polizaId)
+      || window._state.data.polizas.find(p => p.cliente === item.cliente);
+
+    // Vista especial para Persona / Vida
+    if (item.tipo === 'persona') {
+      const vidas = item.vidas && item.vidas.length
+        ? item.vidas
+        : [{ nombre: item.asegurado, dni: item.dni_aseg, nac: item.nac_aseg }];
+
+      // Obtener historial de cambios de este bien
+      const historialBien = (window._state.data.historial_nomina||[])
+        .filter(h => h.bienId === item.id)
+        .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+
+      const historialHtml = historialBien.length ? `
+        <div class="card" style="margin-top:12px">
+          <div class="card-header"><span class="card-title">📋 Historial de cambios en nómina</span></div>
+          <div style="font-size:13px">
+            ${historialBien.map(h => `
+              <div style="padding:10px 0;border-bottom:1px solid var(--border);last-child:{border:none}">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                  <span style="font-weight:500;color:var(--text2)">${h.fecha} ${h.hora||''}</span>
+                  <span style="color:var(--text3);font-size:12px">por ${h.usuario||'usuario'}</span>
+                </div>
+                ${(h.cambios||[]).map(c => {
+                  const color = c.tipo==='ALTA' ? 'var(--green)' : c.tipo==='BAJA' ? 'var(--red)' : 'var(--amber)';
+                  const bg    = c.tipo==='ALTA' ? 'var(--green-bg)' : c.tipo==='BAJA' ? 'var(--red-bg)' : 'var(--amber-bg)';
+                  const icono = c.tipo==='ALTA' ? '＋' : c.tipo==='BAJA' ? '－' : '✎';
+                  const detalle = c.tipo==='MODIFICACIÓN'
+                    ? `DNI ${c.dni}: nombre cambió de "${c.antes}" a "${c.despues}"`
+                    : `${c.nombre}${c.dni?' — DNI: '+c.dni:''}${c.nac?' — Nac: '+c.nac:''}`;
+                  return `<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px">
+                    <span style="background:${bg};color:${color};font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap">${icono} ${c.tipo}</span>
+                    <span style="color:var(--text)">${detalle}</span>
+                  </div>`;
+                }).join('')}
+              </div>`).join('')}
+          </div>
+        </div>` : '';
+
+      // Una sola persona: mostrar todo en una card
+      if (vidas.length === 1) {
+        return card('Bien asegurado — Vida / Persona', [
+          { label: 'Tipo',               value: item.tipo },
+          { label: 'Cliente',            value: item.cliente },
+          { label: 'Cobertura',          value: item.cobertura || polizaAsociada?.cobertura },
+          { label: 'Nombre asegurado',   value: vidas[0].nombre },
+          { label: 'DNI asegurado',      value: vidas[0].dni },
+          { label: 'Fecha de nacimiento',value: vidas[0].nac },
+          { label: 'Observaciones',      value: item.observaciones, full:true, type:'textarea' }
+        ]) + historialHtml;
+      }
+
+      // Múltiples personas: card general + una card por persona
+      const vidasCards = vidas.map((v, i) => card(`Persona asegurada ${i+1}`, [
+        { label: 'Nombre asegurado',    value: v.nombre },
+        { label: 'DNI asegurado',       value: v.dni },
+        { label: 'Fecha de nacimiento', value: v.nac }
+      ])).join('');
+
+      return card('Bien asegurado — Vida / Persona', [
+        { label: 'Tipo',          value: item.tipo },
+        { label: 'Cliente',       value: item.cliente },
+        { label: 'Cobertura',     value: item.cobertura || polizaAsociada?.cobertura },
+        { label: 'Observaciones', value: item.observaciones, full:true, type:'textarea' }
+      ]) + vidasCards + historialHtml;
+    }
+
+    // Vista para vehículo e inmueble
+    // Vista especial para Inmueble: mostrar sumas aseguradas
+    if (item.tipo === 'inmueble') {
+      return card('Bien asegurado — Inmueble', [
+        { label: 'Tipo',             value: item.tipo },
+        { label: 'Cliente',          value: item.cliente },
+        { label: 'Dirección',        value: item.direccion, full:true },
+        { label: 'Tipo de uso',      value: item.uso },
+        { label: 'Superficie (m²)',  value: item.superficie },
+        { label: 'Suma aseg. incendio edificio ($)', value: item.suma_incendio_edificio ? '$'+Number(item.suma_incendio_edificio).toLocaleString('es-AR') : '—' },
+        { label: 'Observaciones',    value: item.observaciones, full:true, type:'textarea' }
+      ]);
+    }
+
+    return card('Bien asegurado', [
+      { label: 'Tipo', value: item.tipo },
+      { label: 'Cliente', value: item.cliente },
+      { label: 'Patente / Dirección', value: item.patente || item.direccion },
+      { label: 'Marca / Modelo', value: item.marca ? `${item.marca} ${item.modelo||''}` : item.modelo },
+      { label: 'Año', value: item.anio },
+      { label: 'Motor', value: item.motor },
+      { label: 'Chasis', value: item.chasis },
+      { label: 'Tipo de uso', value: item.uso },
+      { label: 'Valor asegurado ($)', value: item.valor },
+      { label: 'Cobertura', value: item.cobertura || polizaAsociada?.cobertura },
+      { label: 'Dirección', value: item.direccion },
+      { label: 'Superficie (m²)', value: item.superficie },
+      { label: 'Observaciones', value: item.observaciones, full:true, type:'textarea' }
+    ]);
+  }
+  if (sec === 'siniestros') {
+    return card('Siniestro', [
+      { label: 'Nro. siniestro', value: item.nro },
+      { label: 'Fecha', value: item.fecha },
+      { label: 'Cliente', value: item.cliente },
+      { label: 'Póliza', value: item.poliza },
+      { label: 'Compañía', value: item.compania },
+      { label: 'Estado', value: item.estado },
+      { label: 'Descripción', value: item.descripcion, full:true, type:'textarea' },
+      { label: 'Observaciones', value: item.observaciones, full:true, type:'textarea' }
+    ]);
+  }
+  if (sec === 'productores') {
+    return card('Productor', [
+      { label: 'Nombre', value: item.nombre },
+      { label: 'Matrícula PAS', value: item.matricula },
+      { label: 'Teléfono', value: item.tel },
+      { label: 'Email', value: item.email },
+      { label: 'Observaciones', value: item.observaciones, full:true, type:'textarea' }
+    ]);
+  }
+  if (sec === 'companias') {
+    return card('Compañía', [
+      { label: 'Nombre', value: item.nombre },
+      { label: 'CUIT', value: item.cuit },
+      { label: 'Contacto', value: item.contacto },
+      { label: 'Teléfono', value: item.tel },
+      { label: 'Email', value: item.email },
+      { label: 'Observaciones', value: item.observaciones, full:true, type:'textarea' }
+    ]);
+  }
+  return `<div class="empty-state">No hay detalles disponibles.</div>`;
+}
+
+// ── BÚSQUEDA ───────────────────────────────────────
+window.handleSearch = function(q) {
+  const D   = window._state.data;
+  const el  = document.getElementById('content');
+  const sec = window._state.section;
+  q = (q||'').toLowerCase().trim();
+
+  if (!q) { renderSection(sec); return; }
+
+  // Búsqueda inteligente: busca en múltiples campos según la sección
+  // Además cruza datos entre colecciones (ej: buscar por DNI en pólizas)
+  const match = (val) => (val||'').toLowerCase().includes(q);
+  const matchObj = (obj, fields) => fields.some(f => match(obj[f]));
+
+  if (sec === 'clientes') {
+    const res = D.clientes.filter(c => matchObj(c, ['nombre','dni','email','tel_cel','tel_fijo','domicilio']));
+    el.innerHTML = renderClientes(res);
+
+  } else if (sec === 'polizas') {
+    // Cruzar con clientes por DNI
+    const clientesPorDni = D.clientes.filter(c => match(c.dni)).map(c => c.nombre.toLowerCase());
+    // Cruzar con bienes por patente/marca/modelo
+    const clientesPorPatente = D.bienes.filter(b => match(b.patente)||match(b.marca)||match(b.modelo)).map(b => (b.cliente||'').toLowerCase());
+    // Cruzar con bienes tipo persona/vida: buscar en nómina de asegurados (vidas)
+    const clientesPorVida = D.bienes.filter(b => {
+      if (b.tipo !== 'persona') return false;
+      // Buscar en array vidas
+      if (b.vidas && b.vidas.length) {
+        return b.vidas.some(v => match(v.nombre) || match(v.dni));
+      }
+      // Compatibilidad con registro individual
+      return match(b.asegurado) || match(b.dni_aseg);
+    }).map(b => (b.cliente||'').toLowerCase());
+
+    const res = D.polizas.filter(p =>
+      matchObj(p, ['nro','cliente','ramo','compania','productor','patente','marca','modelo','cobertura']) ||
+      clientesPorDni.some(n => (p.cliente||'').toLowerCase() === n) ||
+      clientesPorPatente.some(n => (p.cliente||'').toLowerCase() === n) ||
+      clientesPorVida.some(n => (p.cliente||'').toLowerCase() === n)
+    );
+    el.innerHTML = renderPolizas(res, D);
+
+  } else if (sec === 'bienes') {
+    const clientesPorDni = D.clientes.filter(c => match(c.dni)).map(c => c.nombre.toLowerCase());
+    const res = D.bienes.filter(b => {
+      // Campos directos del bien
+      if (matchObj(b, ['patente','marca','modelo','cliente','chasis','motor','direccion','asegurado','dni_aseg'])) return true;
+      // Cruzar con clientes por DNI
+      if (clientesPorDni.some(n => (b.cliente||'').toLowerCase() === n)) return true;
+      // Buscar en nómina de vidas (persona/vida)
+      if (b.tipo === 'persona') {
+        if (b.vidas && b.vidas.length) {
+          return b.vidas.some(v => match(v.nombre)||match(v.dni));
+        }
+      }
+      return false;
+    });
+    el.innerHTML = renderBienes(res, D);
+
+  } else if (sec === 'siniestros') {
+    const res = D.siniestros.filter(s => matchObj(s, ['nro','cliente','descripcion','compania','poliza']));
+    el.innerHTML = renderSiniestros(res, D);
+
+  } else if (sec === 'productores') {
+    const res = D.productores.filter(p => matchObj(p, ['nombre','matricula','email','tel']));
+    el.innerHTML = renderProductores(res, D);
+
+  } else if (sec === 'companias') {
+    const res = D.companias.filter(c => matchObj(c, ['nombre','cuit','contacto','tel','email']));
+    el.innerHTML = renderCompanias(res, D);
+
+  } else {
+    // Dashboard / Vencimientos: búsqueda global en pólizas y clientes
+    const clientesPorDni     = D.clientes.filter(c => match(c.dni)).map(c => c.nombre.toLowerCase());
+    const clientesPorPatente  = D.bienes.filter(b => match(b.patente)||match(b.marca)||match(b.modelo)).map(b => (b.cliente||'').toLowerCase());
+    const clientesPorVidaDash = D.bienes.filter(b => {
+      if (b.tipo !== 'persona') return false;
+      if (b.vidas && b.vidas.length) return b.vidas.some(v => match(v.nombre)||match(v.dni));
+      return match(b.asegurado)||match(b.dni_aseg);
+    }).map(b => (b.cliente||'').toLowerCase());
+    const pf = D.polizas.filter(p =>
+      matchObj(p, ['nro','cliente','ramo','compania','patente','marca','modelo']) ||
+      clientesPorDni.some(n => (p.cliente||'').toLowerCase() === n) ||
+      clientesPorPatente.some(n => (p.cliente||'').toLowerCase() === n) ||
+      clientesPorVidaDash.some(n => (p.cliente||'').toLowerCase() === n)
+    );
+    const cf = D.clientes.filter(c => matchObj(c, ['nombre','dni','email','tel_cel','domicilio']));
+
+    el.innerHTML = `
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header">
+          <span class="card-title">Pólizas encontradas</span>
+          <span class="badge badge-blue">${pf.length}</span>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nro.</th><th>Cliente</th><th>Patente</th><th>Ramo</th><th>Compañía</th><th>Estado</th></tr></thead>
+          <tbody>${pf.length
+            ? pf.map(p=>`<tr onclick="openRecordDetail('polizas','${p.id}')" style="cursor:pointer">
+                <td style="font-size:12px;color:var(--text2)">${p.nro||'—'}</td>
+                <td>${avatarCell(p.cliente)}</td>
+                <td style="font-weight:500">${p.patente||'—'}</td>
+                <td>${p.ramo||'—'}</td>
+                <td>${p.compania||'—'}</td>
+                <td>${statusBadge(p.estado)}</td>
+              </tr>`).join('')
+            : `<tr><td colspan="6">${emptyState('Sin resultados')}</td></tr>`
+          }</tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Clientes encontrados</span>
+          <span class="badge badge-blue">${cf.length}</span>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nombre</th><th>DNI/CUIT</th><th>Celular</th><th>Email</th></tr></thead>
+          <tbody>${cf.length
+            ? cf.map(c=>`<tr onclick="openRecordDetail('clientes','${c.id}')" style="cursor:pointer">
+                <td>${avatarCell(c.nombre)}</td>
+                <td>${c.dni||'—'}</td>
+                <td>${c.tel_cel||'—'}</td>
+                <td style="color:var(--blue)">${c.email||'—'}</td>
+              </tr>`).join('')
+            : `<tr><td colspan="4">${emptyState('Sin resultados')}</td></tr>`
+          }</tbody>
+        </table></div>
+      </div>`;
+  }
+};
+
+// ── HELPERS ────────────────────────────────────────
+function initials(name='') { return name.trim().split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+function statusBadge(s) {
+  const map = {
+    'vigente':'badge-green','activa':'badge-green','cerrado':'badge-green',
+    'vencida':'badge-red','rechazado':'badge-red','anulada':'badge-red','renovada':'badge-gray',
+    'suspendida':'badge-amber','en trámite':'badge-amber','pendiente':'badge-amber',
+    'en proceso':'badge-blue'
+  };
+  return `<span class="badge ${map[s]||'badge-gray'}">${s||'—'}</span>`;
+}
+
+function diasRestantes(venc) {
+  if (!venc) return '—';
+  const d = Math.ceil((new Date(venc) - new Date()) / (1000*60*60*24));
+  if (d < 0)  return `<span style="color:var(--red);font-weight:500">Vencida</span>`;
+  if (d <= 30)return `<span style="color:var(--amber);font-weight:500">${d} días</span>`;
+  return `<span style="color:var(--text2)">${d} días</span>`;
+}
+
+function avatarCell(name) {
+  return `<div class="flex-cell"><div class="avatar">${initials(name)}</div>${name||'—'}</div>`;
+}
+
+function emptyState(msg='Sin registros') {
+  return `<div class="empty-state">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    <p>${msg}</p>
+  </div>`;
+}
+
+function uniqueById(arr) {
+  const seen = new Set();
+  return arr.filter(item => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function canalPagoBadge(canal) {
+  const labels = { cupones:'Cupones', tarjeta_credito:'Tarj. crédito', cbu:'CBU' };
+  const colors = { cupones:'badge-blue', tarjeta_credito:'badge-green', cbu:'badge-amber' };
+  if (!canal) return '<span style="color:var(--text3)">—</span>';
+  return `<span class="badge ${colors[canal]||'badge-gray'}">${labels[canal]||canal}</span>`;
+}
+
+function estadoDropdown(id, estadoActual) {
+  const estados = ['vigente','suspendida','anulada','vencida'];
+  const colores = { vigente:'#3B6D11', suspendida:'#854F0B', anulada:'#A32D2D', vencida:'#A32D2D' };
+  const fondos  = { vigente:'#EAF3DE', suspendida:'#FAEEDA', anulada:'#FCEBEB', vencida:'#FCEBEB' };
+  return `<select
+    style="border:none;background:${fondos[estadoActual]||'#f1f5f9'};color:${colores[estadoActual]||'#475569'};font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;cursor:pointer;outline:none;font-family:inherit"
+    onchange="cambiarEstadoPoliza('${id}', this.value)"
+  >
+    ${estados.map(e => `<option value="${e}" ${e===estadoActual?'selected':''}>${e.charAt(0).toUpperCase()+e.slice(1)}</option>`).join('')}
+  </select>`;
+}
+
+function getCuotasVencimiento(poliza) {
+  const fechaInicio = (poliza.fecha_vencimiento || poliza.venc_hasta || '').trim();
+  if (!fechaInicio) return [];
+  const cantidadCuotas = { anual:1, semestral:6, trimestral:3, mensual:12 }[poliza.frecuencia_pago] || 1;
+  const fechaBase = new Date(fechaInicio);
+  if (isNaN(fechaBase)) return [];
+  return Array.from({ length: cantidadCuotas }, (_, i) => {
+    const fecha = new Date(fechaBase);
+    fecha.setMonth(fecha.getMonth() + i);
+    return {
+      poliza,
+      fecha: fecha.toISOString().split('T')[0],
+      cuota: i + 1,
+      total: cantidadCuotas,
+      monto: Math.round(((parseFloat(poliza.prima) || 0) / cantidadCuotas) * 100) / 100
+    };
+  });
+}
+
+function getMesKey(fecha) {
+  return fecha ? fecha.slice(0,7) : '';
+}
+
+window.renovarPoliza = function(id) {
+  const poliza = window._state.data.polizas.find(p => p.id === id);
+  if (!poliza) return;
+
+  // Buscar bien asegurado vinculado
+  const bien = window._state.data.bienes.find(b =>
+    (b.cliente||'').toLowerCase().trim() === (poliza.cliente||'').toLowerCase().trim()
+  );
+
+  // Armar prefill con todos los datos de la póliza anterior
+  // dejando nro, venc_desde y venc_hasta vacíos para que los ingrese el usuario
+  const prefill = {
+    // Cliente
+    cliente:           poliza.cliente     || '',
+    cliente_modo:      'existente',
+    cliente_existente: poliza.cliente     || '',
+    // Póliza — vaciar solo los campos que cambian
+    nro:               '',
+    venc_desde:        '',
+    venc_hasta:        '',
+    prima:             poliza.prima       || '',
+    ramo:              poliza.ramo        || '',
+    cobertura:         poliza.cobertura   || '',
+    compania:          poliza.compania    || '',
+    productor:         poliza.productor   || '',
+    estado:            'vigente',
+    canal_pago:        poliza.canal_pago  || '',
+    obs_poliza:        poliza.observaciones || '',
+    // Bien asegurado
+    tipo_bien:         bien?.tipo         || poliza.tipo_bien || 'vehiculo',
+    patente:           bien?.patente      || poliza.patente   || '',
+    marca:             bien?.marca        || poliza.marca     || '',
+    modelo:            bien?.modelo       || poliza.modelo    || '',
+    anio:              bien?.anio         || poliza.anio      || '',
+    motor:             bien?.motor        || '',
+    chasis:            bien?.chasis       || '',
+    uso:               bien?.uso          || '',
+    valor:             bien?.valor        || poliza.valor     || '',
+    cobertura_bien:    bien?.cobertura    || poliza.cobertura || '',
+    direccion:         bien?.direccion    || '',
+    superficie:        bien?.superficie   || '',
+    asegurado:         bien?.asegurado    || '',
+    dni_aseg:          bien?.dni_aseg     || '',
+    nac_aseg:          bien?.nac_aseg     || '',
+    _renovacionDe:     id  // referencia a la póliza anterior
+  };
+
+  // Marcar la póliza anterior como renovada
+  window._state._polizaARenovar = id;
+
+  // Abrir modal en modo nueva póliza (no edición)
+  window._state.editingId = null;
+  window._state.section   = 'polizas';
+  document.getElementById('modal-title').textContent = 'Renovar póliza';
+  document.getElementById('modal-body').innerHTML = buildAltaUnificadaForm(prefill);
+  document.getElementById('modal-overlay').style.display = 'flex';
+
+  // Ir directamente al paso 2 (póliza) ya que el cliente está listo
+  setTimeout(() => {
+    switchAltaTab('poliza', 1);
+  }, 50);
+};
+
+window.cambiarEstadoPoliza = async (id, nuevoEstado) => {
+  try {
+    // 1. Actualizar en Firebase - colección polizas
+    await window._updateDoc(window._doc(window._db, 'polizas', id), { estado: nuevoEstado });
+
+    // 2. Actualizar en memoria local - pólizas
+    const p = window._state.data.polizas.find(p => p.id === id);
+    if (p) p.estado = nuevoEstado;
+
+    // 3. Re-renderizar la sección actual
+    renderSection(window._state.section);
+  } catch(e) {
+    alert('Error al cambiar estado: ' + e.message);
+  }
+};
+
+function actBtns(sec, id) {
+  const renovarBtn = sec === 'polizas'
+    ? `<button class="btn btn-sm" style="color:var(--blue);border-color:#c5dcf5;background:var(--blue-light)" onclick="event.stopPropagation(); renovarPoliza('${id}')">Renov.</button>`
+    : '';
+  return `<div class="td-actions">
+    <button class="btn btn-sm" onclick="event.stopPropagation(); openRecordDetail('${sec}','${id}')">Ver</button>
+    <button class="btn btn-sm" onclick="event.stopPropagation(); editRecord('${sec}','${id}')">Editar</button>
+    ${renovarBtn}
+    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteRecord('${sec}','${id}')">Eliminar</button>
+  </div>`;
+}
+
+// ── DASHBOARD ──────────────────────────────────────
+function renderDashboard(D) {
+  const uniquePolizas = uniqueById(D.polizas || []);
+  const vigentes  = uniquePolizas.filter(p => p.estado === 'vigente').length;
+  const sAbiert   = D.siniestros.filter(s => s.estado === 'en trámite' || s.estado === 'en proceso').length;
+  const vencProx  = uniquePolizas.filter(p => { const d = Math.ceil((new Date(p.venc_hasta)-new Date())/(864e5)); return d>=0&&d<=30; });
+  // Mostrar sólo la última póliza por asegurado en el listado de "Últimas pólizas ingresadas"
+  const seenClients = new Set();
+  const latestPerClient = [];
+  for (const p of uniquePolizas) {
+    const key = (p.cliente||'').toLowerCase().trim();
+    if (!key) continue;
+    if (!seenClients.has(key)) {
+      seenClients.add(key);
+      latestPerClient.push(p);
+    }
+  }
+  const ultPolizas= latestPerClient.slice(0,6);
+
+  const vencRows = vencProx.length
+    ? vencProx.sort((a,b)=>new Date(a.venc_hasta)-new Date(b.venc_hasta)).map(p => `<tr onclick="openRecordDetail('polizas','${p.id}')" style="cursor:pointer">
+        <td>${avatarCell(p.cliente)}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.nro||'—'}</td>
+        <td>${p.ramo||'—'}</td>
+        <td>${p.compania||'—'}</td>
+        <td>${p.venc_hasta||'—'}</td>
+        <td>${diasRestantes(p.venc_hasta)}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="6">${emptyState('Sin vencimientos próximos en los próximos 30 días')}</td></tr>`;
+
+  const findBien = cliente => {
+    const bienes = D.bienes.filter(b => b.cliente === cliente);
+    return bienes.length ? bienes[0] : null;
+  };
+
+  const ultRows = ultPolizas.length
+    ? ultPolizas.map(p => {
+        const bien = findBien(p.cliente);
+        const bienLabel = bien ? `${bien.tipo||'Bien'} · ${bien.patente||bien.direccion||bien.asegurado||'Sin identificación'}` : 'Sin bien';
+        return `<tr onclick="openRecordDetail('polizas','${p.id}')" style="cursor:pointer">
+          <td>${avatarCell(p.cliente)}</td>
+          <td>${p.ramo||'—'}</td>
+          <td>${p.compania||'—'}</td>
+          <td>${bienLabel}</td>
+          <td>${p.prima ? '$'+Number(p.prima).toLocaleString('es-AR') : '—'}</td>
+          <td>${statusBadge(p.estado)}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="6">${emptyState('Aún no hay pólizas cargadas')}</td></tr>`;
+
+  return `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Clientes</div><div class="stat-value">${D.clientes.length}</div><div class="stat-sub">en cartera</div></div>
+      <div class="stat-card"><div class="stat-label">Pólizas vigentes</div><div class="stat-value">${vigentes}</div><div class="stat-sub">activas</div></div>
+      <div class="stat-card"><div class="stat-label">Siniestros abiertos</div><div class="stat-value" style="color:var(--amber)">${sAbiert}</div><div class="stat-sub">en seguimiento</div></div>
+      <div class="stat-card"><div class="stat-label">Vencen este mes</div><div class="stat-value" style="color:var(--red)">${vencProx.length}</div><div class="stat-sub">a renovar</div></div>
+    </div>
+    ${vencProx.length ? `<div class="alert alert-amber">⚠ Hay ${vencProx.length} póliza${vencProx.length>1?'s':''} que vence${vencProx.length>1?'n':''} en los próximos 30 días.</div>` : ''}
+    <div class="card">
+      <div class="card-header"><span class="card-title">Próximos vencimientos</span><span class="badge badge-amber">30 días</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Nro. póliza</th><th>Ramo</th><th>Compañía</th><th>Vencimiento</th><th>Días restantes</th></tr></thead><tbody>${vencRows}</tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Últimas pólizas ingresadas</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Ramo</th><th>Compañía</th><th>Bien</th><th>Prima</th><th>Estado</th></tr></thead><tbody>${ultRows}</tbody></table></div>
+    </div>`;
+}
+
+// ── CLIENTES ───────────────────────────────────────
+function renderClientes(data) {
+  const unique = uniqueById(data || []);
+  const rows = unique.length ? unique.map(c => `<tr onclick="openRecordDetail('clientes','${c.id}')" style="cursor:pointer">
+    <td>${avatarCell(c.nombre)}</td>
+    <td>${c.dni||'—'}</td>
+    <td>${c.fecha_nac||'—'}</td>
+    <td>${c.tel_cel||'—'}</td>
+    <td style="color:var(--blue)">${c.email||'—'}</td>
+    <td style="font-size:12px;color:var(--text2)">${c.domicilio||'—'}</td>
+    <td>${c.cod_postal||'—'}</td>
+    <td>${c.provincia||'—'}</td>
+    <td>${actBtns('clientes',c.id)}</td>
+  </tr>`).join('') : `<tr><td colspan="9">${emptyState('No hay clientes registrados')}</td></tr>`;
+  return `<div class="card"><div class="table-wrap"><table>
+    <thead><tr><th>Nombre</th><th>DNI / CUIT</th><th>Nacimiento</th><th>Celular</th><th>Email</th><th>Domicilio</th><th>C.P.</th><th>Provincia</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+
+// ── PÓLIZAS ────────────────────────────────────────
+let polizaFiltro = 'todas';
+const polizaFrecLabel = {
+  anual:'Anual', semestral_1:'Sem.1', semestral:'Sem.5', cuatrimestral:'Cuat.3',
+  trimestral_1:'Trim.1', trimestral:'Trim.3', bimestral_1:'Bim.1', mensual_1:'Mens.1', mensual:'Mens.12'
+};
+function renderPolizas(data, D) {
+  const unique = uniqueById(data || []);
+  const filtered = polizaFiltro === 'todas' ? unique : unique.filter(p => p.estado === polizaFiltro);
+  const rows = filtered.length ? filtered.map(p => `<tr onclick="openRecordDetail('polizas','${p.id}')" style="cursor:pointer">
+    <td class="col-nro">${p.nro||'—'}</td>
+    <td class="col-cliente">${avatarCell(p.cliente)}</td>
+    <td class="col-cobertura">${p.cobertura||'—'}</td>
+    <td class="col-compania" title="${(p.compania||'').replace(/"/g,'&quot;')}">${p.compania||'—'}</td>
+    <td class="col-productor" title="${(p.productor||'').replace(/"/g,'&quot;')}">${p.productor||'—'}</td>
+    <td class="col-patente">${p.patente||'—'}</td>
+    <td class="col-marca" title="${p.marca?((p.marca+' '+p.modelo).replace(/"/g,'&quot;')):''}">${p.marca?p.marca+' '+p.modelo:'—'}</td>
+    <td class="col-fecha">${p.venc_desde||'—'}</td>
+    <td class="col-fecha">${p.venc_hasta||'—'}</td>
+    <td class="col-canal">${canalPagoBadge(p.canal_pago)}</td>
+    <td class="col-comision" style="text-align:center">${p.comision ? p.comision+'%' : '—'}</td>
+    <td class="col-ingreso" style="white-space:nowrap">${p.ingreso_productor ? '$'+Number(p.ingreso_productor).toLocaleString('es-AR') : '—'}</td>
+    <td class="col-frec"><span class="badge badge-gray">${polizaFrecLabel[p.frecuencia_pago]||'Anual'}</span></td>
+    <td class="col-estado" onclick="event.stopPropagation()">${estadoDropdown(p.id, p.estado)}</td>
+    <td class="col-acciones" onclick="event.stopPropagation()">${actBtns('polizas',p.id)}</td>
+  </tr>`).join('') : `<tr><td colspan="13">${emptyState('Sin pólizas en este estado')}</td></tr>`;
+  return `
+    <div class="chip-row">
+      <div class="chip ${polizaFiltro==='todas'?'active':''}" onclick="setPolizaFiltro('todas',this)">Todas</div>
+      <div class="chip ${polizaFiltro==='vigente'?'active':''}" onclick="setPolizaFiltro('vigente',this)">Vigentes</div>
+      <div class="chip ${polizaFiltro==='anulada'?'active':''}" onclick="setPolizaFiltro('anulada',this)">Anuladas</div>
+      <div class="chip ${polizaFiltro==='renovada'?'active':''}" onclick="setPolizaFiltro('renovada',this)">Renovadas</div>
+      <div class="chip ${polizaFiltro==='vencida'?'active':''}" onclick="setPolizaFiltro('vencida',this)">Vencidas</div>
+      <div class="chip ${polizaFiltro==='suspendida'?'active':''}" onclick="setPolizaFiltro('suspendida',this)">Suspendidas</div>
+    </div>
+    <div class="card"><div class="table-wrap"><table class="polizas-table">
+      <thead><tr><th class="col-nro">Nro.</th><th class="col-cliente">Cliente</th><th class="col-cobertura">Cobert.</th><th class="col-compania">Compañía</th><th class="col-productor">Productor</th><th class="col-patente">Patente</th><th class="col-marca">Marca/Mod.</th><th class="col-fecha">Desde</th><th class="col-fecha">Hasta</th><th class="col-canal">Canal</th><th class="col-comision">Com.%</th><th class="col-ingreso">Ing.prod.</th><th class="col-frec">Frec.</th><th class="col-estado">Estado</th><th class="col-acciones">Acciones</th></tr></thead>
+      <tbody>${rows}</tbody></table></div></div>`;
+}
+window.setPolizaFiltro = (f, el) => {
+  polizaFiltro = f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('content').innerHTML = renderPolizas(window._state.data.polizas, window._state.data);
+};
+
+// ── BIENES ASEGURADOS ──────────────────────────────
+let bienFiltro = 'todos';
+function renderBienes(data, D) {
+  const unique = uniqueById(data || []);
+  const filtered = bienFiltro === 'todos' ? unique : unique.filter(b => b.tipo === bienFiltro);
+  const rows = filtered.length ? filtered.map(b => `<tr onclick="openRecordDetail('bienes','${b.id}')" style="cursor:pointer">
+    <td><span class="badge ${b.tipo==='vehiculo'?'badge-blue':b.tipo==='inmueble'?'badge-green':'badge-amber'}">${b.tipo||'—'}</span></td>
+    <td>${avatarCell(b.cliente)}</td>
+    <td>${b.tipo==='persona' ? (b.vidas&&b.vidas.length>0 ? b.vidas.length+' persona'+(b.vidas.length>1?'s':'') : b.asegurado||'—') : (b.patente||b.direccion||b.asegurado||'—')}</td>
+    <td>${b.marca ? b.marca+' '+b.modelo : (b.descripcion||'—')}</td>
+    <td>${b.anio||'—'}</td>
+    <td style="font-size:12px;color:var(--text2)">${b.motor||b.superficie||'—'}</td>
+    <td>${b.chasis||b.uso||'—'}</td>
+    <td style="white-space:nowrap">${b.valor ? '$'+Number(b.valor).toLocaleString('es-AR') : '—'}</td>
+    <td>${actBtns('bienes',b.id)}</td>
+  </tr>`).join('') : `<tr><td colspan="9">${emptyState('Sin bienes registrados')}</td></tr>`;
+  return `
+    <div class="chip-row">
+      <div class="chip ${bienFiltro==='todos'?'active':''}" onclick="setBienFiltro('todos',this)">Todos</div>
+      <div class="chip ${bienFiltro==='vehiculo'?'active':''}" onclick="setBienFiltro('vehiculo',this)">Vehículos</div>
+      <div class="chip ${bienFiltro==='inmueble'?'active':''}" onclick="setBienFiltro('inmueble',this)">Inmuebles</div>
+      <div class="chip ${bienFiltro==='persona'?'active':''}" onclick="setBienFiltro('persona',this)">Personas / Vida</div>
+    </div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Tipo</th><th>Cliente</th><th>Identificación</th><th>Marca / Descripción</th><th>Año</th><th>Motor / Datos</th><th>Uso / Chasis</th><th>Valor asegurado</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div></div>`;
+}
+window.setBienFiltro = (f, el) => {
+  bienFiltro = f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('content').innerHTML = renderBienes(window._state.data.bienes, window._state.data);
+};
+
+// ── SINIESTROS ─────────────────────────────────────
+function renderSiniestros(data, D) {
+  const rows = data.length ? data.map(s => `<tr>
+    <td style="font-size:12px;color:var(--text2);white-space:nowrap">${s.nro||'—'}</td>
+    <td>${avatarCell(s.cliente)}</td>
+    <td style="font-size:12px">${s.poliza||'—'}</td>
+    <td>${s.fecha||'—'}</td>
+    <td>${s.descripcion||'—'}</td>
+    <td>${s.compania||'—'}</td>
+    <td>${statusBadge(s.estado)}</td>
+    <td>${actBtns('siniestros',s.id)}</td>
+  </tr>`).join('') : `<tr><td colspan="8">${emptyState('No hay siniestros registrados')}</td></tr>`;
+  return `<div class="card"><div class="table-wrap"><table>
+    <thead><tr><th>Nro.</th><th>Cliente</th><th>Póliza</th><th>Fecha</th><th>Descripción</th><th>Compañía</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+
+// ── PRODUCTORES ────────────────────────────────────
+function renderProductores(data, D) {
+  const rows = data.length ? data.map(p => `<tr>
+    <td>${avatarCell(p.nombre)}</td>
+    <td style="font-size:12px;color:var(--text2)">${p.matricula||'—'}</td>
+    <td>${p.tel||'—'}</td>
+    <td style="color:var(--blue)">${p.email||'—'}</td>
+    <td>${p.observaciones||'—'}</td>
+    <td>${actBtns('productores',p.id)}</td>
+  </tr>`).join('') : `<tr><td colspan="6">${emptyState('No hay productores registrados')}</td></tr>`;
+  return `<div class="card"><div class="table-wrap"><table>
+    <thead><tr><th>Nombre</th><th>Matrícula PAS</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+
+// ── COMPAÑÍAS ──────────────────────────────────────
+function renderCompanias(data, D) {
+  const rows = data.length ? data.map(c => `<tr>
+    <td><strong>${c.nombre||'—'}</strong></td>
+    <td style="font-size:12px;color:var(--text2)">${c.cuit||'—'}</td>
+    <td>${c.contacto||'—'}</td>
+    <td>${c.tel||'—'}</td>
+    <td style="color:var(--blue)">${c.email||'—'}</td>
+    <td>${c.observaciones||'—'}</td>
+    <td>${actBtns('companias',c.id)}</td>
+  </tr>`).join('') : `<tr><td colspan="7">${emptyState('No hay compañías registradas')}</td></tr>`;
+  return `<div class="card"><div class="table-wrap"><table>
+    <thead><tr><th>Compañía</th><th>CUIT</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th>Observaciones</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+
+// ── VENCIMIENTOS ───────────────────────────────────
+function renderCobranzas(polizas, D) {
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Filtro por mes activo
+  const hoy    = new Date();
+  const mesKey = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
+
+  const cuotas = polizas
+    .filter(p => p.canal_pago === 'cupones')
+    .flatMap(getCuotasVencimiento)
+    .sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+  const porMes = {};
+  cuotas.forEach(entry => {
+    const mes = getMesKey(entry.fecha);
+    if (!mes) return;
+    porMes[mes] = porMes[mes] || [];
+    porMes[mes].push(entry);
+  });
+
+  const mesesOrdenados = Object.keys(porMes).sort();
+  const selectedMonth = mesesOrdenados.includes(mesKey) ? mesKey : (mesesOrdenados[0] || mesKey);
+  const pendientesHoy  = cuotas.filter(entry => entry.fecha <= hoy.toISOString().split('T')[0]);
+  const totalPendiente = pendientesHoy.reduce((s, entry) => s + entry.monto, 0);
+
+  const chipsMeses = mesesOrdenados.map(m => {
+    const [y, mo] = m.split('-');
+    const label = `${meses[parseInt(mo)-1]} ${y}`;
+    return `<div class="chip ${m===selectedMonth?'active':''}" onclick="filtrarCobranzas('${m}',this)">${label}</div>`;
+  }).join('');
+
+  const cuotasAMostrar = porMes[selectedMonth] || [];
+  const rows = cuotasAMostrar.length ? cuotasAMostrar
+    .map(entry => {
+      const p = entry.poliza;
+      return `<tr>
+        <td>${entry.fecha}</td>
+        <td>${entry.cuota}/${entry.total}</td>
+        <td>${avatarCell(p.cliente)}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.nro||'—'}</td>
+        <td>${p.ramo||'—'}</td>
+        <td>${p.compania||'—'}</td>
+        <td>${p.productor||'—'}</td>
+        <td style="font-weight:500;white-space:nowrap">$${Number(entry.monto||0).toLocaleString('es-AR')}</td>
+        <td onclick="event.stopPropagation()">${estadoDropdown(p.id, p.estado)}</td>
+        <td><button class="btn btn-sm" onclick="openRecordDetail('polizas','${p.id}')">Ver</button></td>
+      </tr>`;
+    }).join('')
+    : `<tr><td colspan="10">${emptyState('No hay pólizas con cupones para este período')}</td></tr>`;
+
+  return `
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-label">Total vencimientos cupones</div><div class="stat-value">${cuotas.length}</div><div class="stat-sub">cuotas generadas</div></div>
+      <div class="stat-card"><div class="stat-label">Vencimientos hoy</div><div class="stat-value" style="color:var(--amber)">${pendientesHoy.length}</div><div class="stat-sub">en o antes de hoy</div></div>
+      <div class="stat-card"><div class="stat-label">Importe pendiente</div><div class="stat-value" style="color:var(--red);font-size:20px">$${totalPendiente.toLocaleString('es-AR')}</div><div class="stat-sub">estimado</div></div>
+    </div>
+    <div class="chip-row">${chipsMeses||'<span style="color:var(--text3);font-size:13px">Sin pólizas con cupones aún</span>'}</div>
+    <div class="card" id="tabla-cobranzas">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fecha de vencimiento</th><th>Cuota</th><th>Cliente</th><th>Nro. póliza</th><th>Ramo</th><th>Compañía</th><th>Productor</th><th>Importe</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>`;
+}
+
+window.filtrarCobranzas = (mesKey, el) => {
+  const D = window._state.data;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const cuotas = (D.polizas||[])
+    .filter(p => p.canal_pago === 'cupones')
+    .flatMap(getCuotasVencimiento)
+    .filter(entry => getMesKey(entry.fecha) === mesKey)
+    .sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+  const rows = cuotas.length ? cuotas.map(entry => {
+      const p = entry.poliza;
+      return `<tr>
+        <td>${entry.fecha}</td>
+        <td>${entry.cuota}/${entry.total}</td>
+        <td>${avatarCell(p.cliente)}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.nro||'—'}</td>
+        <td>${p.ramo||'—'}</td>
+        <td>${p.compania||'—'}</td>
+        <td>${p.productor||'—'}</td>
+        <td style="font-weight:500;white-space:nowrap">$${Number(entry.monto||0).toLocaleString('es-AR')}</td>
+        <td>${statusBadge(p.estado)}</td>
+        <td><button class="btn btn-sm" onclick="openRecordDetail('polizas','${p.id}')">Ver</button></td>
+      </tr>`;
+    }).join('')
+    : `<tr><td colspan="10">${emptyState('No hay pólizas con cupones en este mes')}</td></tr>`;
+  document.querySelector('#tabla-cobranzas tbody').innerHTML = rows;
+};
+
+window.cambiarEstadoCuota = async (id, nuevoEstado) => {
+  try {
+    // 1. Actualizar cuota en Firebase
+    await window._updateDoc(window._doc(window._db,'cuotas',id), { estado: nuevoEstado });
+    const c = (window._state.data.cuotas||[]).find(c=>c.id===id);
+    if (c) c.estado = nuevoEstado;
+
+    // 2. Sincronizar con la póliza vinculada
+    if (c && c.polizaId) {
+      await window._updateDoc(window._doc(window._db,'polizas',c.polizaId), { estado: nuevoEstado });
+      const p = window._state.data.polizas.find(p => p.id === c.polizaId);
+      if (p) p.estado = nuevoEstado;
+    }
+
+    // 3. Re-renderizar
+    renderSection(window._state.section);
+  } catch(e) { alert('Error: '+e.message); }
+};
+
+window.toggleCuotasPreview = (frecuencia, prima, vencDesde) => {
+  // Solo informativo — no hace nada visual por ahora
+};
+
+window.calcularIngresoProductor = function() {
+  const prima    = parseFloat(document.querySelector('[name="prima"]')?.value || 0);
+  const comision = parseFloat(document.querySelector('[name="comision"]')?.value || 0);
+  const resultado = (!isNaN(prima) && !isNaN(comision)) ? Math.round(prima * comision / 100 * 100) / 100 : 0;
+  const campo = document.querySelector('[name="ingreso_productor"]');
+  if (campo) campo.value = resultado > 0 ? resultado : '';
+};
+
+function renderVencimientos(polizas, D) {
+  const sorted = [...polizas].filter(p=>p.venc_hasta).sort((a,b)=>new Date(a.venc_hasta)-new Date(b.venc_hasta));
+  const rows = sorted.length ? sorted.map(p => {
+    const d = Math.ceil((new Date(p.venc_hasta)-new Date())/(864e5));
+    return `<tr>
+      <td style="font-weight:500">${p.venc_hasta}</td>
+      <td>${avatarCell(p.cliente)}</td>
+      <td style="font-size:12px;color:var(--text2)">${p.nro||'—'}</td>
+      <td>${p.ramo||'—'}</td>
+      <td>${p.compania||'—'}</td>
+      <td>${p.productor||'—'}</td>
+      <td>${diasRestantes(p.venc_hasta)}</td>
+      <td>${statusBadge(p.estado)}</td>
+      <td><button class="btn btn-sm" onclick="openRecordDetail('polizas','${p.id}')">Ver</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="9">${emptyState('No hay pólizas con fecha de vencimiento cargada')}</td></tr>`;
+  return `<div class="card"><div class="table-wrap"><table>
+    <thead><tr><th>Vencimiento</th><th>Cliente</th><th>Nro. póliza</th><th>Ramo</th><th>Compañía</th><th>Productor</th><th>Días restantes</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+
+// ── MODAL: FORMULARIOS ─────────────────────────────
+function buildClienteForm(d={}) {
+  const provincias = ['Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'];
+  const optProv = provincias.map(p=>`<option value="${p}" ${d.provincia===p?'selected':''}>${p}</option>`).join('');
+  return `<div class="form-grid">
+    <div class="form-group"><label>Apellido y Nombre *</label><input type="text" name="nombre" value="${d.nombre||''}" placeholder="Pérez Juan" required></div>
+    <div class="form-group"><label>DNI / CUIT *</label><input type="text" name="dni" value="${d.dni||''}" placeholder="28.123.456"></div>
+    <div class="form-group"><label>Fecha de nacimiento</label><input type="date" name="fecha_nac" value="${d.fecha_nac||''}"></div>
+    <div class="form-group"><label>Email</label><input type="email" name="email" value="${d.email||''}" placeholder="email@ejemplo.com"></div>
+    <div class="form-group"><label>Celular</label><input type="tel" name="tel_cel" value="${d.tel_cel||''}" placeholder="299-4150000"></div>
+    <div class="form-group"><label>Código postal</label><input type="text" name="cod_postal" value="${d.cod_postal||''}" placeholder="8324"></div>
+    <div class="form-group form-col-full"><label>Domicilio</label><input type="text" name="domicilio" value="${d.domicilio||''}" placeholder="Av. San Martín 123, Cipolletti"></div>
+    <div class="form-group"><label>Provincia</label>
+      <select name="provincia"><option value="">— Seleccionar —</option>${optProv}</select>
+    </div>
+    <div class="form-group form-col-full"><label>Observaciones</label><textarea name="observaciones">${d.observaciones||''}</textarea></div>
+  </div>`;
+}
+
+function buildPolizaForm(d={}) {
+  const D = window._state.data;
+  const optClientes = D.clientes.map(c=>`<option value="${c.nombre}" ${d.cliente===c.nombre?'selected':''}>${c.nombre}</option>`).join('');
+  const optComp     = D.companias.map(c=>`<option value="${c.nombre}" ${d.compania===c.nombre?'selected':''}>${c.nombre}</option>`).join('');
+  const optProd     = D.productores.map(p=>`<option value="${p.nombre}" ${d.productor===p.nombre?'selected':''}>${p.nombre}</option>`).join('');
+  return `<div class="form-grid">
+    <div class="form-group"><label>Nro. de póliza *</label><input type="text" name="nro" value="${d.nro||''}" placeholder="AUT-2025-00100" required></div>
+    <div class="form-group"><label>Cliente *</label><select name="cliente" required><option value="">— Seleccionar —</option>${optClientes}</select></div>
+    <div class="form-group"><label>Ramo *</label><select name="ramo" required onchange="toggleCoberturaField(this.value)">
+      ${['Automotor','Hogar','Comercio','Vida','Accidentes Personales','ART','Salud','Responsabilidad Civil','Transporte','Agrícola','Otro']
+        .map(r=>`<option value="${r}" ${d.ramo===r?'selected':''}>${r}</option>`).join('')}
+    </select></div>
+    <div class="form-group" id="cobertura-block" style="display:${d.ramo==='Automotor'?'block':'none'};">
+      <label>Cobertura</label>
+      <select name="cobertura">
+        <option value="">— Seleccionar cobertura —</option>
+        ${['A','B','B1','C1','C','TR'].map(c=>`<option value="${c}" ${d.cobertura===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label>Compañía *</label><select name="compania" required><option value="">— Seleccionar —</option>${optComp}</select></div>
+    <div class="form-group"><label>Productor</label><select name="productor"><option value="">— Seleccionar —</option>${optProd}</select></div>
+    <div class="form-group"><label>Estado</label><select name="estado">
+      <option value="vigente" ${d.estado==='vigente'?'selected':''}>Vigente</option>
+      <option value="suspendida" ${d.estado==='suspendida'?'selected':''}>Suspendida</option>
+      <option value="vencida" ${d.estado==='vencida'?'selected':''}>Vencida</option>
+    </select></div>
+    <div class="form-group"><label>Vigencia desde</label><input type="date" name="venc_desde" value="${d.venc_desde||''}"></div>
+    <div class="form-group"><label>Vigencia hasta *</label><input type="date" name="venc_hasta" value="${d.venc_hasta||''}"></div>
+    <div class="form-group"><label>Prima</label><input type="number" name="prima" value="${d.prima||''}" placeholder="0"></div>
+    <div class="form-group"><label>Suma asegurada ($)</label><input type="number" name="suma" value="${d.suma||''}" placeholder="0"></div>
+    <div class="form-group form-col-full"><label>Observaciones</label><textarea name="observaciones">${d.observaciones||''}</textarea></div>
+  </div>`;
+}
+
+function buildBienForm(d={}) {
+  const D = window._state.data;
+  const optClientes = D.clientes.map(c=>`<option value="${c.nombre}" ${d.cliente===c.nombre?'selected':''}>${c.nombre}</option>`).join('');
+  const tipo = d.tipo || 'vehiculo';
+  return `<div class="form-grid">
+    <div class="form-group"><label>Tipo de bien *</label>
+      <select name="tipo" onchange="refreshBienForm(this.value)" required>
+        <option value="vehiculo" ${tipo==='vehiculo'?'selected':''}>Vehículo</option>
+        <option value="inmueble" ${tipo==='inmueble'?'selected':''}>Inmueble (hogar/comercio)</option>
+        <option value="persona"  ${tipo==='persona'?'selected':''}>Persona / Vida</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Cliente titular *</label><select name="cliente" required><option value="">— Seleccionar —</option>${optClientes}</select></div>
+    <div id="bien-campos">${buildBienCampos(tipo, d)}</div>
+    <div class="form-group form-col-full"><label>Observaciones</label><textarea name="observaciones">${d.observaciones||''}</textarea></div>
+  </div>`;
+}
+
+function buildBienCampos(tipo, d={}) {
+  // Opciones de cobertura según tipo de bien
+  const optsVehiculo = ['A','B','B1','C1','C','TR'];
+  const optsPersona  = ['AP REINTEGRO','AP PRESTACIONAL','VIDA OBLIGATORIO','VIDA','VIDA AHORRO'];
+  const optsInmueble = ['A','B','C'];
+  const optsCobertura = tipo === 'persona' ? optsPersona : tipo === 'inmueble' ? optsInmueble : optsVehiculo;
+  const coberturaSelect = `<div class="form-group"><label>Cobertura</label><select name="cobertura">
+      <option value="">— Seleccionar cobertura —</option>
+      ${optsCobertura.map(c=>`<option value="${c}" ${d.cobertura===c?'selected':''}>${c}</option>`).join('')}
+    </select></div>`;
+  if (tipo === 'vehiculo') return `
+    <div class="form-section">Datos del vehículo</div>
+    ${coberturaSelect}
+    <div class="form-group"><label>Patente *</label><input type="text" name="patente" value="${d.patente||''}" placeholder="AB 123 CD" style="text-transform:uppercase"></div>
+    <div class="form-group"><label>Marca</label><input type="text" name="marca" value="${d.marca||''}" placeholder="Toyota"></div>
+    <div class="form-group"><label>Modelo</label><input type="text" name="modelo" value="${d.modelo||''}" placeholder="Hilux"></div>
+    <div class="form-group"><label>Año</label><input type="number" name="anio" value="${d.anio||''}" placeholder="2022" min="1900" max="2099"></div>
+    <div class="form-group"><label>Nro. de motor</label><input type="text" name="motor" value="${d.motor||''}" placeholder="ABC123456"></div>
+    <div class="form-group"><label>Nro. de chasis</label><input type="text" name="chasis" value="${d.chasis||''}" placeholder="9BWZZZ377VT004251"></div>
+    <div class="form-group"><label>Tipo de uso</label><select name="uso">
+      <option value="particular" ${d.uso==='particular'?'selected':''}>Particular</option>
+      <option value="comercial"  ${d.uso==='comercial'?'selected':''}>Comercial</option>
+      <option value="transporte" ${d.uso==='transporte'?'selected':''}>Transporte de pasajeros</option>
+    </select></div>
+    <div class="form-group"><label>Valor asegurado ($)</label><input type="number" name="valor" value="${d.valor||''}" placeholder="0"></div>`;
+  if (tipo === 'inmueble') return `
+    <div class="form-section">Datos del inmueble</div>
+    <div class="form-group form-col-full"><label>Dirección del inmueble *</label><input type="text" name="direccion" value="${d.direccion||''}" placeholder="Av. San Martín 123, Cipolletti"></div>
+    <div class="form-group"><label>Tipo</label><select name="uso">
+      <option value="vivienda"  ${d.uso==='vivienda'?'selected':''}>Vivienda familiar</option>
+      <option value="comercio"  ${d.uso==='comercio'?'selected':''}>Comercio</option>
+      <option value="alquiler"  ${d.uso==='alquiler'?'selected':''}>Vivienda en alquiler</option>
+    </select></div>
+    <div class="form-group"><label>Superficie (m²)</label><input type="number" name="superficie" value="${d.superficie||''}" placeholder="80"></div>
+    <div class="form-group"><label>Suma asegurada incendio edificio ($)</label><input type="number" name="suma_incendio_edificio" value="${d.suma_incendio_edificio||''}" placeholder="0"></div>
+    <div class="form-group form-col-full"><label>Observaciones</label><textarea name="observaciones">${d.observaciones||''}</textarea></div>`;
+  if (tipo === 'persona') {
+    // Determinar lista de vidas a mostrar
+    let listaVidas = [];
+    if (d.vidas && d.vidas.length > 0) {
+      listaVidas = d.vidas;
+    } else if (d.asegurado || d.dni_aseg) {
+      listaVidas = [{ nombre: d.asegurado||'', dni: d.dni_aseg||'', nac: d.nac_aseg||'' }];
+    } else {
+      listaVidas = [{}];
+    }
+    const totalVidas = listaVidas.length;
+    return `
+    ${coberturaSelect}
+    <div class="form-section" style="grid-column:1/-1">Personas aseguradas (${totalVidas})</div>
+    <div class="form-col-full" id="vidas-container">
+      ${listaVidas.map((v, i) => `
+        <div class="vida-row" data-index="${i}" style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:12px;font-weight:600;color:var(--text2)">PERSONA ${i+1}</span>
+            ${totalVidas > 1 ? `<button type="button" class="btn btn-sm btn-danger" onclick="eliminarVida(${i})" style="padding:2px 8px;font-size:11px">✕ Dar de baja</button>` : ''}
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label>Apellido y Nombre *</label><input type="text" name="vida_nombre_${i}" value="${v.nombre||''}" placeholder="Nombre completo"></div>
+            <div class="form-group"><label>DNI</label><input type="text" name="vida_dni_${i}" value="${v.dni||''}" placeholder="28.123.456"></div>
+            <div class="form-group"><label>Fecha de nacimiento</label><input type="date" name="vida_nac_${i}" value="${v.nac||''}"></div>
+            <div class="form-group"><label>Capital asegurado ($)</label><input type="number" name="vida_capital_${i}" value="${v.capital||''}" placeholder="0"></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="form-col-full">
+      <button type="button" class="btn" onclick="agregarVida()" style="width:100%;border-style:dashed;color:var(--blue)">
+        + Agregar persona asegurada
+      </button>
+    </div>`;}
+    if (false) return '';
+  return '';
+}
+
+window.refreshBienForm = function(tipo) {
+  document.getElementById('bien-campos').innerHTML = buildBienCampos(tipo);
+};
+
+// ── FORMULARIO UNIFICADO DE ALTA ───────────────────
+function buildAltaUnificadaForm(d={}) {
+  const D = window._state.data;
+  const pref = { ...d };
+  if (pref.cliente) {
+    pref.cliente_modo = pref.cliente_modo || 'existente';
+    pref.cliente_existente = pref.cliente_existente || pref.cliente;
+    const cliente = D.clientes.find(c => c.nombre === pref.cliente);
+    if (cliente) {
+      pref.dni = pref.dni || cliente.dni;
+      pref.fecha_nac = pref.fecha_nac || cliente.fecha_nac;
+      pref.email = pref.email || cliente.email;
+      pref.tel_cel = pref.tel_cel || cliente.tel_cel;
+      pref.tel_fijo = pref.tel_fijo || cliente.tel_fijo;
+      pref.domicilio = pref.domicilio || cliente.domicilio;
+    }
+    // Buscar póliza vinculada por nro (edición directa) o por cliente
+    const poliza = pref.nro
+      ? D.polizas.find(p => p.nro === pref.nro)
+      : D.polizas.find(p => p.cliente === pref.cliente);
+    if (poliza) {
+      pref.nro       = pref.nro       || poliza.nro;
+      pref.ramo      = pref.ramo      || poliza.ramo;
+      pref.cobertura = pref.cobertura || poliza.cobertura;
+      pref.compania  = pref.compania  || poliza.compania;
+      pref.productor = pref.productor || poliza.productor;
+      pref.estado    = pref.estado    || poliza.estado;
+      pref.prima     = pref.prima     || poliza.prima;
+      pref.venc_desde= pref.venc_desde|| poliza.venc_desde;
+      pref.venc_hasta= pref.venc_hasta|| poliza.venc_hasta;
+      pref.suma      = pref.suma      || poliza.suma;
+      pref.obs_poliza= pref.obs_poliza|| poliza.observaciones;
+    }
+
+    // Buscar bien asegurado: primero por polizaId, luego por cliente (nombre exacto o parcial)
+    const editId = window._state.editingId || '';
+    let bien = D.bienes.find(b => b.polizaId === editId);
+    if (!bien && pref.cliente) {
+      // Buscar por nombre exacto
+      bien = D.bienes.find(b => b.cliente === pref.cliente);
+      // Si no encuentra, buscar por nombre parcial (por si hay diferencias de mayúsculas/espacios)
+      if (!bien) {
+        const nombreNorm = pref.cliente.toLowerCase().trim();
+        bien = D.bienes.find(b => (b.cliente||'').toLowerCase().trim() === nombreNorm);
+      }
+    }
+    if (bien) {
+      pref._bienId    = bien.id;
+      pref.tipo_bien  = pref.tipo_bien  || bien.tipo;
+      pref.patente    = pref.patente    || bien.patente;
+      pref.marca      = pref.marca      || bien.marca;
+      pref.modelo     = pref.modelo     || bien.modelo;
+      pref.anio       = pref.anio       || bien.anio;
+      pref.motor      = pref.motor      || bien.motor;
+      pref.chasis     = pref.chasis     || bien.chasis;
+      pref.uso        = pref.uso        || bien.uso;
+      pref.valor      = pref.valor      || bien.valor;
+      pref.cobertura  = pref.cobertura  || bien.cobertura;
+      pref.direccion  = pref.direccion  || bien.direccion;
+      pref.superficie = pref.superficie || bien.superficie;
+      pref.asegurado  = pref.asegurado  || bien.asegurado;
+      pref.dni_aseg   = pref.dni_aseg   || bien.dni_aseg;
+      pref.nac_aseg   = pref.nac_aseg   || bien.nac_aseg;
+      // ── CRUCIAL: copiar array de vidas para persona/vida ──
+      if (!pref.vidas || pref.vidas.length === 0) {
+        if (bien.vidas && bien.vidas.length > 0) {
+          pref.vidas = bien.vidas;
+        } else if (bien.asegurado || bien.dni_aseg) {
+          // Compatibilidad con formato antiguo (una sola persona)
+          pref.vidas = [{ nombre: bien.asegurado||'', dni: bien.dni_aseg||'', nac: bien.nac_aseg||'' }];
+        }
+      }
+    }
+  }
+  const optComp = D.companias.map(c=>`<option value="${c.nombre}" ${pref.compania===c.nombre?'selected':''}>${c.nombre}</option>`).join('');
+  const optProd = D.productores.map(p=>`<option value="${p.nombre}" ${pref.productor===p.nombre?'selected':''}>${p.nombre}</option>`).join('');
+  const optClientes = D.clientes.map(c=>`<option value="${c.nombre}" ${pref.cliente===c.nombre?'selected':''}>${c.nombre}</option>`).join('');
+  const tipoBien = pref.tipo_bien || pref.tipo || 'vehiculo';
+  const activeTab = pref.tipo ? 'bien' : 'cliente'; // Si tiene tipo, es edición de bien
+  return `
+  <div class="alta-tabs">
+    <div class="alta-tab ${activeTab === 'cliente' ? 'active' : ''}" onclick="switchAltaTab('cliente',this)"><span class="tab-num">1</span> Cliente</div>
+    <div class="alta-tab ${activeTab === 'poliza' ? 'active' : ''}" onclick="switchAltaTab('poliza',this)"><span class="tab-num">2</span> Póliza</div>
+    <div class="alta-tab ${activeTab === 'bien' ? 'active' : ''}" onclick="switchAltaTab('bien',this)"><span class="tab-num">3</span> Bien asegurado</div>
+  </div>
+  <div class="alta-panels">
+    <div class="alta-panel ${activeTab === 'cliente' ? 'active' : ''}" id="panel-cliente">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:500;color:var(--text2)">¿Es un cliente existente o nuevo?</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button type="button" class="btn${pref.cliente_modo==='nuevo'?' btn-primary':''}" id="btn-clie-nuevo" onclick="toggleClienteMode('nuevo')">Cliente nuevo</button>
+          <button type="button" class="btn${pref.cliente_modo==='existente'?' btn-primary':''}" id="btn-clie-exist" onclick="toggleClienteMode('existente')">Cliente existente</button>
+        </div>
+      </div>
+      <input type="hidden" name="cliente_modo" value="${pref.cliente_modo||'nuevo'}">
+      <div id="modo-clie-exist" style="display:${pref.cliente_modo==='existente'?'block':'none'}">
+        <div class="form-group"><label>Seleccionar cliente *</label>
+          <select name="cliente_existente" onchange="autocompletarCliente(this.value)">
+            <option value="">— Seleccionar cliente —</option>${optClientes}
+          </select>
+        </div>
+        <div id="info-polizas-cliente-existente"></div>
+      </div>
+      <div id="modo-clie-nuevo" style="display:${pref.cliente_modo==='existente'?'none':'block'}">
+        <div id="aviso-cliente-existente"></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Apellido y Nombre *</label><input type="text" name="nombre" value="${pref.nombre||''}" placeholder="Pérez Juan" oninput="checkClienteExistente()"></div>
+          <div class="form-group"><label>DNI / CUIT</label><input type="text" name="dni" value="${pref.dni||''}" placeholder="28.123.456" oninput="checkClienteExistente()"></div>
+          <div class="form-group"><label>Fecha de nacimiento</label><input type="date" name="fecha_nac" value="${pref.fecha_nac||''}"></div>
+          <div class="form-group"><label>Email</label><input type="email" name="email" value="${pref.email||''}" placeholder="email@ejemplo.com"></div>
+          <div class="form-group"><label>Celular</label><input type="tel" name="tel_cel" value="${pref.tel_cel||''}" placeholder="299-4150000"></div>
+          <div class="form-group"><label>Código postal</label><input type="text" name="cod_postal" value="${pref.cod_postal||''}" placeholder="8324"></div>
+          <div class="form-group form-col-full"><label>Domicilio</label><input type="text" name="domicilio" value="${pref.domicilio||''}" placeholder="Av. San Martín 123, Cipolletti"></div>
+          <div class="form-group"><label>Provincia</label>
+            <select name="provincia">
+              <option value="">— Seleccionar provincia —</option>
+              ${['Buenos Aires','CABA','Catamarca','Chaco','Chubut','Córdoba','Corrientes','Entre Ríos','Formosa','Jujuy','La Pampa','La Rioja','Mendoza','Misiones','Neuquén','Río Negro','Salta','San Juan','San Luis','Santa Cruz','Santa Fe','Santiago del Estero','Tierra del Fuego','Tucumán'].map(p=>`<option value="${p}" ${pref.provincia===p?'selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="alta-panel-actions">
+        <button type="button" class="btn btn-primary" onclick="switchAltaTab('poliza',document.querySelectorAll('.alta-tab')[1])">Siguiente →</button>
+      </div>
+    </div>
+
+    <div class="alta-panel ${activeTab === 'poliza' ? 'active' : ''}" id="panel-poliza">
+      <div class="form-grid">
+        <div class="form-group"><label>Nro. de póliza *</label><input type="text" name="nro" value="${pref.nro||''}" placeholder="AUT-2025-00100" required></div>
+        <div class="form-group"><label>Ramo *</label><select name="ramo" required onchange="toggleCoberturaField(this.value)">
+          ${['Automotor','Hogar','Comercio','Vida','Accidentes Personales','ART','Salud','Responsabilidad Civil','Transporte','Agrícola','Otro'].map(r=>`<option value="${r}" ${pref.ramo===r?'selected':''}>${r}</option>`).join('')}
+        </select></div>
+        <div class="form-group" id="cobertura-block" style="display:${pref.ramo==='Automotor'?'block':'none'};">
+          <label>Cobertura</label>
+          <select name="cobertura">
+            <option value="">— Seleccionar cobertura —</option>
+            ${['A','B','B1','C1','C','TR'].map(c=>`<option value="${c}" ${pref.cobertura===c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Compañía *</label><select name="compania" required><option value="">— Seleccionar —</option>${optComp}</select></div>
+        <div class="form-group"><label>Productor</label><select name="productor"><option value="">— Sin asignar —</option>${optProd}</select></div>
+        <div class="form-group"><label>Estado</label><select name="estado">
+          <option value="vigente" ${pref.estado==='vigente'?'selected':''}>Vigente</option><option value="suspendida" ${pref.estado==='suspendida'?'selected':''}>Suspendida</option><option value="vencida" ${pref.estado==='vencida'?'selected':''}>Vencida</option>
+        </select></div>
+        <div class="form-group"><label>Prima</label><input type="number" name="prima" value="${pref.prima||''}" placeholder="0" oninput="calcularIngresoProductor()"></div>
+        <div class="form-group"><label>Vigencia desde</label><input type="date" name="venc_desde" value="${pref.venc_desde||''}"></div>
+        <div class="form-group"><label>Vigencia hasta *</label><input type="date" name="venc_hasta" value="${pref.venc_hasta||''}"></div>
+        <div class="form-group"><label>Canal de pago</label>
+          <select name="canal_pago" onchange="toggleCanalPagoField(this.value)">
+            <option value="" ${!pref.canal_pago?'selected':''}>— Seleccionar —</option>
+            <option value="cupones" ${pref.canal_pago==='cupones'?'selected':''}>Cupones</option>
+            <option value="tarjeta_credito" ${pref.canal_pago==='tarjeta_credito'?'selected':''}>Tarjeta de crédito</option>
+            <option value="cbu" ${pref.canal_pago==='cbu'?'selected':''}>CBU</option>
+          </select>
+        </div>
+        <div class="form-group" id="canal-fecha-vencimiento" style="display:${pref.canal_pago==='cupones'?'block':'none'};">
+          <label>Fecha de vencimiento</label>
+          <input type="date" name="fecha_vencimiento" value="${pref.fecha_vencimiento||''}">
+        </div>
+        <div class="form-group"><label>Frecuencia de pago</label>
+          <select name="frecuencia_pago" onchange="toggleCuotasPreview(this.value, '${pref.prima||''}', '${pref.venc_desde||''}')">
+            <option value="anual"            ${(pref.frecuencia_pago||'anual')==='anual'?'selected':''}>Anual (1 cuota)</option>
+            <option value="semestral_1"      ${pref.frecuencia_pago==='semestral_1'?'selected':''}>Semestral (1 cuota)</option>
+            <option value="semestral"        ${pref.frecuencia_pago==='semestral'?'selected':''}>Semestral (5 cuotas)</option>
+            <option value="cuatrimestral"    ${pref.frecuencia_pago==='cuatrimestral'?'selected':''}>Cuatrimestral (3 cuotas)</option>
+            <option value="trimestral_1"     ${pref.frecuencia_pago==='trimestral_1'?'selected':''}>Trimestral (1 cuota)</option>
+            <option value="trimestral"       ${pref.frecuencia_pago==='trimestral'?'selected':''}>Trimestral (3 cuotas)</option>
+            <option value="bimestral_1"      ${pref.frecuencia_pago==='bimestral_1'?'selected':''}>Bimestral (1 cuota)</option>
+            <option value="mensual_1"        ${pref.frecuencia_pago==='mensual_1'?'selected':''}>Mensual (1 cuota)</option>
+            <option value="mensual"          ${pref.frecuencia_pago==='mensual'?'selected':''}>Mensual (12 cuotas)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Comisión (%)</label>
+          <input type="number" name="comision" value="${pref.comision||''}" placeholder="0" min="0" max="100" step="0.01"
+            oninput="calcularIngresoProductor()">
+        </div>
+        <div class="form-group"><label>Ingreso a productor ($)</label>
+          <input type="number" name="ingreso_productor" value="${pref.ingreso_productor||''}" placeholder="0" readonly
+            style="background:var(--bg2);color:var(--text2)">
+        </div>
+        <div class="form-group form-col-full"><label>Observaciones</label><textarea name="obs_poliza">${pref.obs_poliza||''}</textarea></div>
+      </div>
+      <div class="alta-panel-actions">
+        <button type="button" class="btn" onclick="switchAltaTab('cliente',document.querySelectorAll('.alta-tab')[0])">← Anterior</button>
+        <button type="button" class="btn btn-primary" onclick="switchAltaTab('bien',document.querySelectorAll('.alta-tab')[2])">Siguiente →</button>
+      </div>
+    </div>
+
+    <div class="alta-panel ${activeTab === 'bien' ? 'active' : ''}" id="panel-bien">
+      <div class="form-grid">
+        <div class="form-group form-col-full"><label>Tipo de bien asegurado</label>
+          <select name="tipo_bien" onchange="refreshAltaBienCampos(this.value)">
+            <option value="vehiculo" ${tipoBien==='vehiculo'?'selected':''}>Vehículo</option>
+            <option value="inmueble" ${tipoBien==='inmueble'?'selected':''}>Inmueble (hogar/comercio)</option>
+            <option value="persona"  ${tipoBien==='persona'?'selected':''}>Persona / Vida</option>
+            <option value="sin_bien" ${tipoBien==='sin_bien'?'selected':''}>Sin bien asociado</option>
+          </select>
+        </div>
+      </div>
+      <input type="hidden" name="_bienId" value="${pref._bienId||''}">
+      <div id="alta-bien-campos" class="form-grid">${buildBienCampos(tipoBien, pref)}</div>
+      <div class="alta-panel-actions">
+        <button type="button" class="btn" onclick="switchAltaTab('poliza',document.querySelectorAll('.alta-tab')[1])">← Anterior</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.switchAltaTab = function(panel, el) {
+  // Guardar datos del panel actual antes de cambiar
+  _guardarDatosPanelActual();
+  document.querySelectorAll('.alta-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.alta-panel').forEach(p=>p.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const panelEl = document.getElementById('panel-'+panel);
+  if(panelEl) panelEl.classList.add('active');
+  // Restaurar datos guardados en el nuevo panel
+  _restaurarDatosPanel();
+};
+
+// Almacén temporal de datos mientras se navega entre tabs
+window._formCache = {};
+window._clienteMode = 'nuevo';
+
+function _guardarDatosPanelActual() {
+  // Guardar TODOS los paneles, no solo el activo
+  const _noUpperCache = new Set(['email','canal_pago','estado','frecuencia_pago','tipo','uso','tipo_bien','ramo','provincia','cobertura','cliente_existente','cliente_modo','_bienId','polizaId','nroPoliza']);
+  document.querySelectorAll('.alta-panel').forEach(panel => {
+    panel.querySelectorAll('[name]').forEach(el => {
+      if (el.value === undefined) return;
+      let v = el.value;
+      if (el.type !== 'date' && el.type !== 'number' && el.type !== 'email' && !_noUpperCache.has(el.name)) {
+        v = v ? v.toUpperCase() : v;
+      }
+      window._formCache[el.name] = v;
+    });
+  });
+}
+
+function _restaurarDatosPanel() {
+  const panelActivo = document.querySelector('.alta-panel.active');
+  if (!panelActivo) return;
+  panelActivo.querySelectorAll('[name]').forEach(el => {
+    if (window._formCache[el.name] !== undefined) {
+      el.value = window._formCache[el.name];
+    }
+  });
+}
+
+window.toggleClienteMode = function(modo) {
+  window._clienteMode = modo;
+  const esNuevo = modo==='nuevo';
+  document.getElementById('modo-clie-nuevo').style.display = esNuevo?'block':'none';
+  document.getElementById('modo-clie-exist').style.display = esNuevo?'none':'block';
+  document.getElementById('btn-clie-nuevo').className = 'btn'+(esNuevo?' btn-primary':'');
+  document.getElementById('btn-clie-exist').className = 'btn'+(esNuevo?'':' btn-primary');
+  // Actualizar el campo hidden para que saveRecord lo lea correctamente
+  const hiddenModo = document.querySelector('[name="cliente_modo"]');
+  if (hiddenModo) hiddenModo.value = modo;
+};
+
+window.autocompletarCliente = function(nombreCliente) {
+  if(!nombreCliente) return;
+  const c = window._state.data.clientes.find(x=>x.nombre===nombreCliente);
+  if(c) window._state.clienteSeleccionado = c;
+  // Mostrar también, a modo de sugerencia, las pólizas que ese cliente ya tiene cargadas
+  mostrarPolizasDeCliente(nombreCliente);
+};
+
+function _normDni(v) { return (v||'').toString().replace(/[.\-\s]/g,''); }
+function _normNombre(v) { return (v||'').toString().trim().toUpperCase(); }
+
+// Busca si el DNI o el nombre tipeados en "Cliente nuevo" ya pertenecen a un cliente cargado
+// y, de ser así, sugiere vincular la póliza a ese cliente en vez de crear uno duplicado.
+window.checkClienteExistente = function() {
+  const panel = document.getElementById('modo-clie-nuevo');
+  const aviso = document.getElementById('aviso-cliente-existente');
+  if (!panel || !aviso) return;
+  const nombreVal = panel.querySelector('[name="nombre"]')?.value || '';
+  const dniVal    = panel.querySelector('[name="dni"]')?.value    || '';
+  const dniNorm    = _normDni(dniVal);
+  const nombreNorm = _normNombre(nombreVal);
+
+  let match = null;
+  if (dniNorm.length >= 6) {
+    match = window._state.data.clientes.find(c => _normDni(c.dni) === dniNorm);
+  }
+  if (!match && nombreNorm.length >= 5) {
+    match = window._state.data.clientes.find(c => _normNombre(c.nombre) === nombreNorm);
+  }
+
+  if (!match) { aviso.innerHTML = ''; return; }
+
+  const polizasCliente = window._state.data.polizas.filter(p => p.cliente === match.nombre);
+  const resumenPolizas = polizasCliente.length
+    ? polizasCliente.slice(0,3).map(p => `${p.ramo||'—'} · ${p.compania||'—'} (${p.estado||'—'})`).join(', ') +
+      (polizasCliente.length > 3 ? ` y ${polizasCliente.length - 3} más` : '')
+    : 'sin pólizas cargadas todavía';
+
+  aviso.innerHTML = `
+    <div style="background:var(--amber-bg);color:var(--amber);border:1px solid #f3d9ab;border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.5">
+      <div style="font-weight:600;margin-bottom:2px">⚠ Este cliente ya existe en el sistema</div>
+      <div><b>${match.nombre}</b>${match.dni ? ' · DNI '+match.dni : ''} — ${polizasCliente.length} póliza(s): ${resumenPolizas}</div>
+      <div style="margin-top:6px">
+        <button type="button" class="btn btn-sm btn-primary" onclick="vincularClienteExistente('${match.nombre.replace(/'/g,"\\'")}')">Usar este cliente existente</button>
+        <button type="button" class="btn btn-sm" onclick="document.getElementById('aviso-cliente-existente').innerHTML=''">Es otra persona, ignorar</button>
+      </div>
+    </div>`;
+};
+
+// Muestra (informativamente) las pólizas ya cargadas del cliente elegido en el combo "Cliente existente"
+function mostrarPolizasDeCliente(nombreCliente) {
+  const cont = document.getElementById('info-polizas-cliente-existente');
+  if (!cont) return;
+  const polizasCliente = window._state.data.polizas.filter(p => p.cliente === nombreCliente);
+  if (!polizasCliente.length) { cont.innerHTML = ''; return; }
+  const items = polizasCliente.map(p => `${p.ramo||'—'} · ${p.compania||'—'} · Nº ${p.nro||'—'} (${p.estado||'—'})`).join('<br>');
+  cont.innerHTML = `
+    <div style="background:var(--blue-light);color:var(--blue-dark);border:1px solid #c5dcf5;border-radius:var(--radius);padding:10px 12px;margin-top:8px;font-size:12.5px;line-height:1.6">
+      <div style="font-weight:600;margin-bottom:2px">Pólizas ya cargadas de este cliente</div>
+      ${items}
+    </div>`;
+}
+
+// Cambia a "cliente existente", selecciona el cliente detectado y autocompleta sus datos
+window.vincularClienteExistente = function(nombreCliente) {
+  toggleClienteMode('existente');
+  const sel = document.querySelector('[name="cliente_existente"]');
+  if (sel) {
+    sel.value = nombreCliente;
+    autocompletarCliente(nombreCliente);
+  }
+  const aviso = document.getElementById('aviso-cliente-existente');
+  if (aviso) aviso.innerHTML = '';
+};
+
+window.toggleCoberturaField = function(ramo) {
+  const block = document.getElementById('cobertura-block');
+  if (!block) return;
+  block.style.display = ramo === 'Automotor' ? 'block' : 'none';
+  if (ramo !== 'Automotor') {
+    const sel = block.querySelector('select[name="cobertura"]');
+    if (sel) sel.value = '';
+  }
+};
+
+window.toggleCanalPagoField = function(canal) {
+  const block = document.getElementById('canal-fecha-vencimiento');
+  if (!block) return;
+  block.style.display = canal === 'cupones' ? 'block' : 'none';
+  if (canal !== 'cupones') {
+    const input = block.querySelector('input[name="fecha_vencimiento"]');
+    if (input) input.value = '';
+  }
+};
+
+window.refreshAltaBienCampos = function(tipo) {
+  const cont = document.getElementById('alta-bien-campos');
+  if(!cont) return;
+  cont.innerHTML = tipo==='sin_bien' ? '' : buildBienCampos(tipo);
+};
+
+window.agregarVida = function() {
+  const container = document.getElementById('vidas-container');
+  if (!container) return;
+  const rows = container.querySelectorAll('.vida-row');
+  const i = rows.length;
+
+  // Agregar botón "Dar de baja" a la primera fila si no lo tiene
+  if (i === 1) {
+    const firstRow = rows[0];
+    if (!firstRow.querySelector('button.btn-danger')) {
+      const header = firstRow.querySelector('div');
+      const newBtn = document.createElement('button');
+      newBtn.type = 'button';
+      newBtn.className = 'btn btn-sm btn-danger';
+      newBtn.style.cssText = 'padding:2px 8px;font-size:11px';
+      newBtn.setAttribute('onclick', 'eliminarVida(0)');
+      newBtn.textContent = '✕ Dar de baja';
+      if (header) header.appendChild(newBtn);
+    }
+  }
+
+  const div = document.createElement('div');
+  div.className = 'vida-row';
+  div.dataset.index = i;
+  div.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px';
+  div.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+      '<span style="font-size:12px;font-weight:600;color:var(--text2)">PERSONA ' + (i+1) + '</span>' +
+      '<button type="button" class="btn btn-sm btn-danger" onclick="eliminarVida(' + i + ')" style="padding:2px 8px;font-size:11px">✕ Dar de baja</button>' +
+    '</div>' +
+    '<div class="form-grid">' +
+      '<div class="form-group"><label>Apellido y Nombre *</label><input type="text" name="vida_nombre_' + i + '" placeholder="Nombre completo"></div>' +
+      '<div class="form-group"><label>DNI</label><input type="text" name="vida_dni_' + i + '" placeholder="28.123.456"></div>' +
+      '<div class="form-group"><label>Fecha de nacimiento</label><input type="date" name="vida_nac_' + i + '"></div>' +
+      '<div class="form-group"><label>Capital asegurado ($)</label><input type="number" name="vida_capital_' + i + '" placeholder="0"></div>' +
+    '</div>';
+  container.appendChild(div);
+};
+
+window.eliminarVida = function(idx) {
+  const container = document.getElementById('vidas-container');
+  if (!container) return;
+  const rows = container.querySelectorAll('.vida-row');
+  if (rows.length <= 1) {
+    // Si es la última, solo limpiar los campos
+    rows[0].querySelectorAll('input').forEach(el => { el.value = ''; });
+    return;
+  }
+  rows[idx]?.remove();
+  // Renumerar todos los rows restantes
+  container.querySelectorAll('.vida-row').forEach((row, i) => {
+    row.dataset.index = i;
+    // Renombrar inputs
+    row.querySelectorAll('[name]').forEach(el => {
+      el.name = el.name.replace(/_(nombre|dni|nac|capital)_\d+$/, '_$1_' + i);
+    });
+    // Actualizar título
+    const title = row.querySelector('span');
+    if (title) title.textContent = 'PERSONA ' + (i+1);
+    // Actualizar botón eliminar
+    const btn = row.querySelector('button.btn-danger');
+    const totalRows = container.querySelectorAll('.vida-row').length;
+    if (totalRows > 1) {
+      if (btn) {
+        btn.setAttribute('onclick', 'eliminarVida(' + i + ')');
+      } else {
+        // Agregar botón si no tiene
+        const header = row.querySelector('div');
+        if (header) {
+          const newBtn = document.createElement('button');
+          newBtn.type = 'button';
+          newBtn.className = 'btn btn-sm btn-danger';
+          newBtn.style.cssText = 'padding:2px 8px;font-size:11px';
+          newBtn.setAttribute('onclick', 'eliminarVida(' + i + ')');
+          newBtn.textContent = '✕ Dar de baja';
+          header.appendChild(newBtn);
+        }
+      }
+    } else if (btn) {
+      btn.remove(); // Si queda solo 1, quitar botón
+    }
+  });
+};
+
+// Recolectar vidas del formulario
+function recolectarVidas(raw) {
+  // Leer directamente del DOM para capturar todos los paneles
+  const container = document.getElementById('vidas-container');
+  const vidas = [];
+  if (container) {
+    const rows = container.querySelectorAll('.vida-row');
+    rows.forEach((row, i) => {
+      const nombre  = (row.querySelector(`[name="vida_nombre_${i}"]`)?.value || '').trim();
+      const dni     = (row.querySelector(`[name="vida_dni_${i}"]`)?.value    || '').trim();
+      const nac     = (row.querySelector(`[name="vida_nac_${i}"]`)?.value    || '').trim();
+      const capital = (row.querySelector(`[name="vida_capital_${i}"]`)?.value|| '').trim();
+      if (nombre || dni) vidas.push({ nombre, dni, nac, capital });
+    });
+  } else {
+    // Fallback: leer del raw si no hay DOM
+    let i = 0;
+    while (raw['vida_nombre_' + i] !== undefined || raw['vida_dni_' + i] !== undefined) {
+      const nombre  = raw['vida_nombre_' + i] || '';
+      const dni     = raw['vida_dni_' + i]    || '';
+      const nac     = raw['vida_nac_' + i]    || '';
+      const capital = raw['vida_capital_' + i] || '';
+      if (nombre || dni) vidas.push({ nombre, dni, nac, capital });
+      i++;
+    }
+  }
+  // Limpiar campos vida del raw para no contaminar otros datos
+  Object.keys(raw).forEach(k => {
+    if (/^vida_(nombre|dni|nac|capital)_\d+$/.test(k)) delete raw[k];
+  });
+  return vidas;
+}
+
+function buildSiniestroForm(d={}) {
+  const D = window._state.data;
+  const optClientes = D.clientes.map(c=>`<option value="${c.nombre}" ${d.cliente===c.nombre?'selected':''}>${c.nombre}</option>`).join('');
+  const optPolizas  = D.polizas.map(p=>`<option value="${p.nro}" ${d.poliza===p.nro?'selected':''}>${p.nro} — ${p.cliente}</option>`).join('');
+  const optComp     = D.companias.map(c=>`<option value="${c.nombre}" ${d.compania===c.nombre?'selected':''}>${c.nombre}</option>`).join('');
+  return `<div class="form-grid">
+    <div class="form-group"><label>Nro. de siniestro *</label><input type="text" name="nro" value="${d.nro||''}" placeholder="SIN-2025-001" required></div>
+    <div class="form-group"><label>Fecha del siniestro</label><input type="date" name="fecha" value="${d.fecha||''}"></div>
+    <div class="form-group"><label>Cliente *</label><select name="cliente" required><option value="">— Seleccionar —</option>${optClientes}</select></div>
+    <div class="form-group"><label>Póliza afectada</label><select name="poliza"><option value="">— Seleccionar —</option>${optPolizas}</select></div>
+    <div class="form-group"><label>Compañía</label><select name="compania"><option value="">— Seleccionar —</option>${optComp}</select></div>
+    <div class="form-group"><label>Estado</label><select name="estado">
+      <option value="en trámite" ${d.estado==='en trámite'?'selected':''}>En trámite</option>
+      <option value="en proceso"  ${d.estado==='en proceso'?'selected':''}>En proceso</option>
+      <option value="cerrado"     ${d.estado==='cerrado'?'selected':''}>Cerrado</option>
+      <option value="rechazado"   ${d.estado==='rechazado'?'selected':''}>Rechazado</option>
+    </select></div>
+    <div class="form-group form-col-full"><label>Descripción del siniestro</label><textarea name="descripcion" required>${d.descripcion||''}</textarea></div>
+    <div class="form-group form-col-full"><label>Observaciones / seguimiento</label><textarea name="observaciones">${d.observaciones||''}</textarea></div>
+  </div>`;
+}
+
+function buildProductorForm(d={}) {
+  return `<div class="form-grid">
+    <div class="form-group"><label>Apellido y Nombre *</label><input type="text" name="nombre" value="${d.nombre||''}" placeholder="Fernández Ricardo" required></div>
+    <div class="form-group"><label>Matrícula PAS *</label><input type="text" name="matricula" value="${d.matricula||''}" placeholder="PAS-12.441"></div>
+    <div class="form-group"><label>Teléfono</label><input type="tel" name="tel" value="${d.tel||''}" placeholder="299-5501200"></div>
+    <div class="form-group"><label>Email</label><input type="email" name="email" value="${d.email||''}" placeholder="productor@email.com"></div>
+    <div class="form-group form-col-full"><label>Observaciones</label><textarea name="observaciones">${d.observaciones||''}</textarea></div>
+  </div>`;
+}
+
+function buildCompaniaForm(d={}) {
+  return `<div class="form-grid">
+    <div class="form-group"><label>Nombre de la compañía *</label><input type="text" name="nombre" value="${d.nombre||''}" placeholder="La Caja" required></div>
+    <div class="form-group"><label>CUIT</label><input type="text" name="cuit" value="${d.cuit||''}" placeholder="30-50001234-5"></div>
+    <div class="form-group"><label>Contacto comercial</label><input type="text" name="contacto" value="${d.contacto||''}" placeholder="Nombre del contacto"></div>
+    <div class="form-group"><label>Teléfono</label><input type="tel" name="tel" value="${d.tel||''}" placeholder="0800-222-5292"></div>
+    <div class="form-group"><label>Email</label><input type="email" name="email" value="${d.email||''}" placeholder="contacto@compania.com"></div>
+    <div class="form-group form-col-full"><label>Observaciones</label><textarea name="observaciones">${d.observaciones||''}</textarea></div>
+  </div>`;
+}
+
+// ── MODAL OPEN/CLOSE ───────────────────────────────
+const MODAL_TITLES = {
+  clientes:'cliente', polizas:'nueva póliza',
+  siniestros:'siniestro', productores:'productor', companias:'compañía'
+};
+
+window.openModal = function(prefill={}) {
+  const sec = window._state.section;
+  window._state.clienteSeleccionado = null;
+  window._formCache = {}; // Limpiar caché al abrir nuevo formulario
+  // Secciones que usan el formulario unificado
+  if (sec === 'dashboard' || sec === 'vencimientos' || sec === 'polizas' || sec === 'bienes') {
+    const editing = !!window._state.editingId;
+    const isBien = sec === 'bienes';
+    document.getElementById('modal-title').textContent = editing ? (isBien ? 'Editar bien asegurado' : 'Editar póliza') : (isBien ? 'Nuevo bien asegurado' : 'Nueva póliza');
+    document.getElementById('modal-body').innerHTML = buildAltaUnificadaForm(prefill);
+    window._clienteMode = prefill.cliente_modo || (prefill.cliente ? 'existente' : 'nuevo');
+    toggleClienteMode(window._clienteMode);
+    window.setModalButtons(true, 'Cancelar');
+    document.getElementById('modal-overlay').style.display = 'flex';
+    if (prefill.cliente) mostrarPolizasDeCliente(prefill.cliente);
+    return;
+  }
+  const editing = !!window._state.editingId;
+  document.getElementById('modal-title').textContent = (editing ? 'Editar' : 'Nuevo') + ' ' + (MODAL_TITLES[sec]||'');
+  const forms = { clientes: buildClienteForm, siniestros: buildSiniestroForm, productores: buildProductorForm, companias: buildCompaniaForm };
+  document.getElementById('modal-body').innerHTML = forms[sec] ? forms[sec](prefill) : '';
+  window.setModalButtons(true, 'Cancelar');
+  document.getElementById('modal-overlay').style.display = 'flex';
+  if (editing) fillForm(prefill);
+};
+
+function fillForm(d) {
+  const body = document.getElementById('modal-body');
+  Object.keys(d).forEach(k => {
+    const el = body.querySelector(`[name="${k}"]`);
+    if (!el) return;
+    if (el.tagName === 'SELECT') el.value = d[k];
+    else if (el.tagName === 'TEXTAREA') el.value = d[k]||'';
+    else el.value = d[k]||'';
+  });
+}
+
+window.closeModal = function(e) {
+  // Solo cerrar si se llama sin evento (botón Cancelar/X) o si es el botón explícito
+  // NO cerrar al hacer clic fuera del modal
+  if (e && e.type === 'click' && e.target === document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').style.display = 'none';
+  window._state.editingId = null;
+  window._state.clienteSeleccionado = null;
+  window.setModalButtons(true, 'Cancelar');
+};
+
+// ── COLLECT FORM DATA ──────────────────────────────
+window.collectFormData = function() {
+  const body   = document.getElementById('modal-body');
+  const inputs = body.querySelectorAll('[name]');
+  const data   = {};
+  let valid    = true;
+  inputs.forEach(el => {
+    const v = el.value.trim();
+    if (el.required && !v) { el.style.borderColor='var(--red)'; valid=false; } else el.style.borderColor='';
+    if (v) data[el.name] = v;
+  });
+  if (!valid) { alert('Completá los campos obligatorios (*)'); return null; }
+  return data;
+};
+
+// ── SAVE UNIFICADO ─────────────────────────────────
+// Sobreescribimos saveRecord para el formulario unificado
+window.saveRecord = async function() {
+  const sec = window._state.section;
+  const isUnified = (sec === 'dashboard' || sec === 'vencimientos' || sec === 'polizas' || sec === 'bienes');
+
+  // Para secciones simples usar el save de Firebase
+  if (!isUnified) {
+    await window._firebaseSave();
+    return;
+  }
+
+  // ── FORMULARIO UNIFICADO (póliza + cliente + bien) ──
+  _guardarDatosPanelActual();
+  const raw = { ...window._formCache };
+  const _noUpper = new Set(['email','canal_pago','estado','frecuencia_pago','tipo','uso','tipo_bien','ramo','provincia','cobertura','cliente_existente','cliente_modo','_bienId','polizaId','nroPoliza']);
+  document.querySelectorAll('.alta-panel [name]').forEach(el => {
+    if (el.value === '') return;
+    let v = el.value;
+    // Convertir a mayúsculas excepto campos excluidos y fechas/números
+    if (el.type !== 'date' && el.type !== 'number' && el.type !== 'email' && !_noUpper.has(el.name)) {
+      v = v.toUpperCase();
+    }
+    raw[el.name] = v;
+  });
+
+  // Detectar modo cliente: primero del DOM, luego del cache
+  const modoExistEl = document.getElementById('modo-clie-exist');
+  const modoExistente = modoExistEl
+    ? modoExistEl.style.display !== 'none'
+    : (raw.cliente_modo === 'existente');
+  const nombreCliente = modoExistente ? (raw.cliente_existente||'') : (raw.nombre||'');
+
+  const missingCliente = !nombreCliente;
+  if (missingCliente) {
+    alert('Falta seleccionar o cargar el cliente en el Paso 1.');
+    return;
+  }
+
+  const isBienEdit = sec === 'bienes' && window._state.editingId;
+  if (!isBienEdit) {
+    if (!raw.nro)      { alert('Falta el número de póliza. Completá el Paso 2.'); return; }
+    if (!raw.compania) { alert('Falta seleccionar la compañía. Completá el Paso 2.'); return; }
+  }
+
+  if (raw.canal_pago === 'cupones' && !raw.fecha_vencimiento) {
+    alert('Completa la fecha de vencimiento para el canal de pago Cupones.');
+    return;
+  }
+
+  const clienteData = !modoExistente ? {
+    nombre:     nombreCliente,
+    dni:        raw.dni        || '',
+    fecha_nac:  raw.fecha_nac  || '',
+    email:      raw.email      || '',
+    tel_cel:    raw.tel_cel    || '',
+    domicilio:  raw.domicilio  || '',
+    cod_postal: raw.cod_postal || '',
+    provincia:  raw.provincia  || ''
+  } : null;
+
+  const polizaData = {
+    nro:          raw.nro,
+    cliente:      nombreCliente,
+    ramo:         raw.ramo        || '',
+    cobertura:    raw.cobertura   || '',
+    compania:     raw.compania    || '',
+    productor:    raw.productor   || '',
+    estado:       raw.estado      || 'vigente',
+    prima:        raw.prima       || '',
+    venc_desde:   raw.venc_desde  || '',
+    venc_hasta:   raw.venc_hasta  || '',
+    fecha_vencimiento: raw.canal_pago === 'cupones' ? raw.fecha_vencimiento || '' : '',
+    suma:         raw.suma        || '',
+    observaciones:raw.obs_poliza  || '',
+    canal_pago:        raw.canal_pago        || '',
+    frecuencia_pago:   raw.frecuencia_pago   || 'anual',
+    comision:          raw.comision           || '',
+    ingreso_productor: raw.ingreso_productor  || '',
+    // Campos del bien asegurado (para mostrar en la tabla de pólizas)
+    patente:      raw.patente     || '',
+    marca:        raw.marca       || '',
+    modelo:       raw.modelo      || '',
+    anio:         raw.anio        || '',
+    valor:        raw.valor       || ''
+  };
+
+  const tipoBien = raw.tipo_bien || raw.tipo || 'vehiculo';
+
+  // Recolectar múltiples personas si es tipo vida
+  const vidasArr = tipoBien === 'persona' ? recolectarVidas(raw) : [];
+
+  const bienData = tipoBien !== 'sin_bien' ? {
+    tipo:        tipoBien,
+    cliente:     nombreCliente,
+    cobertura:   raw.cobertura  || '',
+    patente:     raw.patente    || '',
+    marca:       raw.marca      || '',
+    modelo:      raw.modelo     || '',
+    anio:        raw.anio       || '',
+    motor:       raw.motor      || '',
+    chasis:      raw.chasis     || '',
+    uso:         raw.uso        || '',
+    valor:       raw.valor      || '',
+    direccion:               raw.direccion               || '',
+    superficie:              raw.superficie              || '',
+    suma_incendio_edificio:  raw.suma_incendio_edificio  || '',
+    suma_incendio_contenido: raw.suma_incendio_contenido || '',
+    suma_robo:               raw.suma_robo               || '',
+    vidas:       vidasArr.length ? vidasArr : [],
+    asegurado:   vidasArr[0]?.nombre || raw.asegurado || '',
+    dni_aseg:    vidasArr[0]?.dni    || raw.dni_aseg  || '',
+    nac_aseg:    vidasArr[0]?.nac    || raw.nac_aseg  || '',
+    asegurado:   raw.asegurado  || '',
+    dni_aseg:    raw.dni_aseg   || '',
+    nac_aseg:    raw.nac_aseg   || ''
+  } : null;
+
+  try {
+    const ts = { creadoEn: window._serverTimestamp(), usuarioId: window._state.user?.uid || '' };
+
+    if (window._state.editingId) {
+      if (sec === 'bienes') {
+        if (bienData) {
+          await window._updateDoc(window._doc(window._db, 'bienes', window._state.editingId), bienData);
+          // También actualizar la póliza vinculada (primero por polizaId, si no existe, por cliente)
+          const bienActual = window._state.data.bienes.find(b => b.id === window._state.editingId);
+          const polizaVinculada = window._state.data.polizas.find(p => p.id === bienActual?.polizaId)
+            || window._state.data.polizas.find(p => p.cliente === bienData.cliente);
+          if (polizaVinculada) {
+            await window._updateDoc(window._doc(window._db, 'polizas', polizaVinculada.id), {
+              patente:   bienData.patente  || '',
+              cobertura: bienData.cobertura|| '',
+              valor:     bienData.valor    || '',
+              marca:     bienData.marca    || '',
+              modelo:    bienData.modelo   || '',
+              anio:      bienData.anio     || ''
+            });
+          }
+        }
+      } else {
+        // Actualizar póliza
+        await window._updateDoc(window._doc(window._db, 'polizas', window._state.editingId), polizaData);
+        // Actualizar bien: usar _bienId del cache si existe
+        const bienId = raw._bienId || '';
+        if (bienData && bienId) {
+          // ── HISTORIAL DE CAMBIOS EN NÓMINA PERSONA/VIDA ──
+          if (bienData.tipo === 'persona') {
+            const bienAnterior = window._state.data.bienes.find(b => b.id === bienId);
+            const vidasAntes   = bienAnterior?.vidas || (bienAnterior?.asegurado ? [{ nombre: bienAnterior.asegurado, dni: bienAnterior.dni_aseg, nac: bienAnterior.nac_aseg }] : []);
+            const vidasDespues = bienData.vidas || [];
+            const cambios = [];
+
+            // Detectar altas
+            vidasDespues.forEach(vd => {
+              const existia = vidasAntes.find(va => (va.dni||'') === (vd.dni||'') && (va.nombre||'').toUpperCase() === (vd.nombre||'').toUpperCase());
+              if (!existia && (vd.nombre || vd.dni)) {
+                cambios.push({ tipo: 'ALTA', nombre: vd.nombre||'', dni: vd.dni||'', nac: vd.nac||'' });
+              }
+            });
+
+            // Detectar bajas
+            vidasAntes.forEach(va => {
+              const sigue = vidasDespues.find(vd => (va.dni||'') === (vd.dni||'') && (va.nombre||'').toUpperCase() === (vd.nombre||'').toUpperCase());
+              if (!sigue && (va.nombre || va.dni)) {
+                cambios.push({ tipo: 'BAJA', nombre: va.nombre||'', dni: va.dni||'', nac: va.nac||'' });
+              }
+            });
+
+            // Detectar modificaciones (mismo DNI, distinto nombre u otros datos)
+            vidasDespues.forEach(vd => {
+              if (!vd.dni) return;
+              const va = vidasAntes.find(v => (v.dni||'') === (vd.dni||''));
+              if (va && (va.nombre||'').toUpperCase() !== (vd.nombre||'').toUpperCase()) {
+                cambios.push({ tipo: 'MODIFICACIÓN', campo: 'NOMBRE', antes: va.nombre||'', despues: vd.nombre||'', dni: vd.dni||'' });
+              }
+            });
+
+            if (cambios.length > 0) {
+              await window._addDoc(window._col('historial_nomina'), {
+                bienId,
+                polizaId:   bienAnterior?.polizaId || '',
+                nroPoliza:  bienAnterior?.nroPoliza || raw.nro || '',
+                cliente:    nombreCliente,
+                cambios,
+                fecha:      new Date().toISOString().split('T')[0],
+                hora:       new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }),
+                usuario:    window._state.user?.displayName || window._state.user?.email || '',
+                creadoEn:   window._serverTimestamp()
+              });
+            }
+          }
+          await window._updateDoc(window._doc(window._db, 'bienes', bienId), { ...bienData, polizaId: window._state.editingId, nroPoliza: raw.nro || '' });
+        } else if (bienData) {
+          // No existe bien previo, crearlo
+          await window._addDoc(window._col('bienes'), { ...bienData, polizaId: window._state.editingId, nroPoliza: raw.nro || '', ...ts });
+        }
+      }
+    } else {
+      if (clienteData) await window._addDoc(window._col('clientes'), { ...clienteData, ...ts });
+      const polizaRef = await window._addDoc(window._col('polizas'), { ...polizaData, ...ts });
+      if (bienData)    await window._addDoc(window._col('bienes'),   { ...bienData, polizaId: polizaRef.id, nroPoliza: raw.nro || '', ...ts });
+    }
+
+    // ── GENERAR CUOTAS si la frecuencia no es anual ──
+    const frecuencia = raw.frecuencia_pago || 'anual';
+    if (frecuencia !== 'anual' && raw.venc_desde && raw.prima && !window._state.editingId) {
+      const nCuotas = {
+        semestral:5, semestral_1:1,
+        cuatrimestral:3,
+        trimestral:3, trimestral_1:1,
+        bimestral_1:1,
+        mensual:12, mensual_1:1
+      }[frecuencia] || 1;
+      const primaTotal = parseFloat(raw.prima) || 0;
+      const montoCuota = Math.round((primaTotal / nCuotas) * 100) / 100;
+      const fechaBase = new Date(raw.venc_desde);
+      const cuotas = [];
+      for (let i = 0; i < nCuotas; i++) {
+        const fechaCuota = new Date(fechaBase);
+        fechaCuota.setMonth(fechaCuota.getMonth() + i * (12 / nCuotas));
+        cuotas.push({
+          numero:    i + 1,
+          total:     nCuotas,
+          monto:     montoCuota,
+          fecha:     fechaCuota.toISOString().split('T')[0],
+          estado:    'pendiente',
+          creadoEn:  window._serverTimestamp(),
+          usuarioId: window._state.user?.uid || ''
+        });
+      }
+      // Obtener el id de la póliza recién creada
+      const polizasSnap = await window._getDocs(window._query(window._col('polizas'), window._orderBy('creadoEn','desc')));
+      if (polizasSnap.docs.length > 0) {
+        const polizaId = polizasSnap.docs[0].id;
+        await Promise.all(cuotas.map(c =>
+          window._addDoc(window._col('cuotas'), { ...c, polizaId, nroPoliza: raw.nro, cliente: nombreCliente })
+        ));
+        window._state.data.cuotas = window._state.data.cuotas || [];
+      }
+    }
+
+    // Si es renovación, marcar póliza anterior como 'renovada'
+    if (window._state._polizaARenovar) {
+      try {
+        await window._updateDoc(
+          window._doc(window._db, 'polizas', window._state._polizaARenovar),
+          { estado: 'renovada' }
+        );
+      } catch(e) {}
+      window._state._polizaARenovar = null;
+    }
+    await window.loadAllData();
+    closeModal();
+    showSection('polizas', document.querySelector('[data-section="polizas"]'));
+  } catch(e) {
+    console.error(e);
+    alert('Error al guardar: ' + e.message);
+  }
+};
+  </script>
+</body>
+</html>
